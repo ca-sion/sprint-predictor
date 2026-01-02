@@ -69,7 +69,7 @@ export const INPUT_GROUPS = [
 // --- 2. GLOSSARY ---
 export const GLOSSARY = {
     'Vmax': { term: 'Vitesse Maximale', def: 'La vitesse de pointe atteinte, généralement sur un intervalle lancé (Fly 10-30m).' },
-    'Tau': { term: 'Tau (Constante de Temps)', def: 'Indique la capacité d\'accélération. Plus Tau est petit, plus l\'athlète atteint sa vitesse max tôt (profil explosif).' },
+    'Tau': { term: 'Tau (Constante de Temps)', def: 'Représente le temps nécessaire pour atteindre environ 63% de la vitesse maximale. Un Tau faible (ex: < 0.9s) indique une accélération explosive (profil "force"), tandis qu\'un Tau plus élevé suggère une accélération plus progressive (profil "vitesse"). C\'est un indicateur clé du profil Force-Vitesse.' },
     'Stiffness': { term: 'Raideur (Stiffness)', def: 'Capacité des jambes à agir comme des ressorts rigides au sol. Mesurée par des temps de contact courts (<0.100s).' },
     'Fly': { term: 'Sprint Lancé (Fly)', def: 'Sprint chronométré où l\'athlète est déjà à pleine vitesse au début de la zone de mesure.' },
     'CMJ': { term: 'Counter Movement Jump', def: 'Saut vertical avec contre-mouvement. Teste l\'explosivité et l\'utilisation du cycle étirement-détente.' },
@@ -104,7 +104,7 @@ export const ATHLETICS_DATA = {
                 standards: { INTERNATIONAL: 10.05, NATIONAL: 10.40, REGIONAL: 10.90 },
                 performance_ranges: { min: 10.20, max: 10.50 },
                 tests: { fly30m: { min: 2.85, max: 2.95 }, block30m: { target: 3.80 }, cmj: { min: 58, max: 65, target: 62 } },
-                mechanics: { contactTime: { min: 80, max: 90 }, vMax: { min: 11.60, max: 12.20 }, obs: "Stiffness excellente" }
+                mechanics: { contactTime: { min: 80, max: 90 }, vMax: { min: 11.60, max: 12.20 } }
             },
             'U23': {
                 standards: { INTERNATIONAL: 10.20, NATIONAL: 10.60, REGIONAL: 11.00 },
@@ -116,19 +116,19 @@ export const ATHLETICS_DATA = {
                 standards: { INTERNATIONAL: 10.45, NATIONAL: 10.85, REGIONAL: 11.30 },
                 performance_ranges: { min: 10.80, max: 11.20 },
                 tests: { fly30m: { min: 3.05, max: 3.15 }, block30m: { target: 4.15 }, cmj: { min: 48, max: 54 } },
-                mechanics: { contactTime: { min: 105, max: 115 }, vMax: { min: 10.60, max: 11.10 }, obs: "Transiter vers la force réactive" }
+                mechanics: { contactTime: { min: 105, max: 115 }, vMax: { min: 10.60, max: 11.20 } }
             },
             'U18': {
                 standards: { INTERNATIONAL: 10.70, NATIONAL: 11.10, REGIONAL: 11.60 },
                 performance_ranges: { min: 11.30, max: 11.60 },
                 tests: { fly30m: { min: 3.20, max: 3.40 }, block30m: { target: 4.25 }, cmj: { min: 42, max: 48 } },
-                mechanics: { contactTime: { min: 115, max: 130 }, vMax: { min: 10.00, max: 10.50 }, obs: "Développer force" }
+                mechanics: { contactTime: { min: 115, max: 130 }, vMax: { min: 10.00, max: 10.60 } }
             },
             'U16': {
                 standards: { INTERNATIONAL: 11.20, NATIONAL: 11.60, REGIONAL: 12.20 },
                 performance_ranges: { min: 9.40, max: 9.90, note: "Basé sur 80m" },
                 tests: { fly30m: { min: 3.50, max: 3.70 }, block30m: { target: 4.40 }, cmj: { min: 36, max: 42 } },
-                mechanics: { contactTime: { min: 130, max: 150 }, vMax: { min: 8.80, max: 9.60 }, obs: "Pied trop souple" }
+                mechanics: { contactTime: { min: 130, max: 150 }, vMax: { min: 8.80, max: 10.00 } }
             }
         },
         'F': {
@@ -136,7 +136,7 @@ export const ATHLETICS_DATA = {
                 standards: { INTERNATIONAL: 11.15, NATIONAL: 11.60, REGIONAL: 12.30 },
                 performance_ranges: { min: 11.20, max: 11.60 },
                 tests: { fly30m: { min: 3.20, max: 3.35 }, block30m: { target: 4.15 }, cmj: { min: 45, max: 52, target: 48 } },
-                mechanics: { contactTime: { min: 95, max: 105 }, vMax: { min: 10.50, max: 11.00 }, obs: "Très excellente stiffness" }
+                mechanics: { contactTime: { min: 95, max: 105 }, vMax: { min: 10.50, max: 11.00 } }
             },
             'U23': {
                 standards: { INTERNATIONAL: 11.30, NATIONAL: 11.80, REGIONAL: 12.50 },
@@ -244,17 +244,17 @@ export const ATHLETICS_DATA = {
 
 export const CONTACT_TIME_TARGETS = {
   M: [
-    { label: "Élite Mondiale", min: 80, max: 90, vmax: "> 11.5", obs: "Stiffness excellente." },
-    { label: "National / Élite", min: 90, max: 105, vmax: "10.5 - 11", obs: "Bonne stiffness." },
-    { label: "U20", min: 105, max: 115, vmax: "9.5 - 10.5", obs: "Transiter vers la force réactive." },
-    { label: "U18", min: 115, max: 130, vmax: "8.5 - 9.5", obs: "Développer force." },
-    { label: "U16", min: 130, max: 150, vmax: "7.5 - 8.5", obs: "Pied trop souple." },
+    { label: "Élite Mondiale", min: 80, max: 90, vmax: "> 11.5" },
+    { label: "National / Élite", min: 90, max: 105, vmax: "10.5 - 11" },
+    { label: "U20", min: 105, max: 115, vmax: "9.5 - 10.5" },
+    { label: "U18", min: 115, max: 130, vmax: "8.5 - 9.5" },
+    { label: "U16", min: 130, max: 150, vmax: "7.5 - 8.5" },
   ],
   F: [
-    { label: "Élite Mondiale", min: 95, max: 105, vmax: "> 10.8", obs: "Stiffness excellente." },
-    { label: "National / Élite", min: 110, max: 120, vmax: "9.8 - 10.5", obs: "Bonne stiffness." },
-    { label: "U20", min: 115, max: 125, vmax: "9.0 - 9.8", obs: "Transiter vers la force réactive." },
-    { label: "U18", min: 125, max: 140, vmax: "8.2 - 9.0", obs: "Pied trop souple." },
+    { label: "Élite Mondiale", min: 95, max: 105, vmax: "> 10.8" },
+    { label: "National / Élite", min: 110, max: 120, vmax: "9.8 - 10.5" },
+    { label: "U20", min: 115, max: 125, vmax: "9.0 - 9.8" },
+    { label: "U18", min: 125, max: 140, vmax: "8.2 - 9.0" },
   ],
 };
 
