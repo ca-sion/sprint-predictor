@@ -507,7 +507,7 @@ export class PredictionEngine {
         splits.push({ distance: 150, time: t150, segmentTime: t100_150, velocity: 50 / t100_150 });
         splits.push({ distance: 200, time: predictedTime, segmentTime: predictedTime - t150, velocity: 50 / (predictedTime - t150) });
 
-        return { time: predictedTime.toFixed(2), range: 0.25, splits, tags: [bias, '200m Projection'], sources: [`Base 100m + Delta ${delta}s`] };
+        return { time: predictedTime.toFixed(2), range: 0.25, splits, tags: [bias, `Base 100m + Delta ${delta}s`], sources: [] };
     }
 
     /**
@@ -539,7 +539,7 @@ export class PredictionEngine {
         splits.push({ distance: 200, time: pacing200, segmentTime: pacing200, velocity: 200/pacing200 });
         splits.push({ distance: 400, time: predictedTime, segmentTime: predictedTime - pacing200, velocity: 200/(predictedTime - pacing200) });
 
-        return { time: predictedTime.toFixed(2), range: 0.8, splits, tags: ["ASR Model", profileType], sources: [`Margin +${margin}s`], model: data?.model };
+        return { time: predictedTime.toFixed(2), range: 0.8, splits, tags: ["ASR Model", profileType, `Margin +${margin}s`], sources: [], model: data?.model };
     }
 
     /**
@@ -564,7 +564,7 @@ export class PredictionEngine {
     predictHurdlesLong(profile, event, athlete) {
         const t400 = parseFloat(this.predict400m(profile, athlete).time);
         let diff = (athlete.gender === 'F' ? 4.5 : 4.0) + (athlete.category === 'U18' ? 1.0 : 0);
-        return { time: (t400 + diff).toFixed(2), range: 1.0, tags: ['400mH Differential'], sources: [`T400 + ${diff}s`] };
+        return { time: (t400 + diff).toFixed(2), range: 1.0, tags: ["400mH Differential", `T400 + ${diff}s`], sources: [] };
     }
 
     calculateFatigueIndex(metrics, vmax) {

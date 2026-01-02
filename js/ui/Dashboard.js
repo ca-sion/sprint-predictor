@@ -21,11 +21,13 @@ export class Dashboard {
             weaknesses: document.getElementById('weaknesses-list'),
             advice: document.getElementById('coach-advice'),
             biblio: document.getElementById('bibliography-list'),
+            glossary: document.getElementById('glossary-list'),
             category: document.getElementById('athlete-category-display'),
             stdLegend: document.getElementById('standards-legend')
         };
         
         this.renderBibliography();
+        this.renderGlossary();
     }
 
     renderBibliography() {
@@ -33,6 +35,31 @@ export class Dashboard {
         this.els.biblio.innerHTML = BIBLIOGRAPHY.map(ref => 
             `<li>${ref}</li>`
         ).join('');
+    }
+
+    renderGlossary() {
+        if (!this.els.glossary) return;
+        
+        // On récupère tout le texte visible de la page pour savoir quels termes sont cités
+        const bodyText = document.body.innerText.toLowerCase();
+        
+        // On filtre le glossaire pour ne garder que ce qui est présent à l'écran
+        const citedTerms = Object.values(GLOSSARY).filter(item => {
+            const termLower = item.term.toLowerCase();
+            // On cherche le terme complet ou sa clé (ex: "Vmax") dans le texte
+            return bodyText.includes(termLower) || 
+                   Object.keys(GLOSSARY).some(key => GLOSSARY[key] === item && bodyText.includes(key.toLowerCase()));
+        });
+
+        if (citedTerms.length === 0) {
+            this.els.glossary.innerHTML = '<li class="italic opacity-50">Les termes techniques s\'afficheront ici lors de l\'analyse.</li>';
+            return;
+        }
+
+        this.els.glossary.innerHTML = citedTerms
+            .sort((a, b) => a.term.localeCompare(b.term))
+            .map(item => `<li><span class="font-bold text-slate-500">${item.term}:</span> ${item.def}</li>`)
+            .join('');
     }
 
     updateHeader(athlete) {
@@ -54,9 +81,25 @@ export class Dashboard {
         if (prediction.sources && prediction.sources.length > 0) {
             tagsHtml += `<div class="w-full text-center text-xs text-slate-400 mb-2 font-medium italic">Sources: ${prediction.sources.join(', ')}</div>`;
         }
-        tagsHtml += prediction.tags.map(tag => 
-            `<span class="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold border border-blue-100 shadow-sm">${tag}</span>`
-        ).join('');
+        tagsHtml += prediction.tags.map(tag => {
+            // Sort keys by length descending to match most specific terms first
+            const termKey = Object.keys(GLOSSARY)
+                .sort((a, b) => b.length - a.length)
+                .find(key => tag.toLowerCase().includes(key.toLowerCase()));
+            
+            if (termKey) {
+                return `
+                <div class="group relative inline-block">
+                    <span class="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold border border-blue-100 shadow-sm cursor-help hover:bg-blue-100 transition-colors">${tag}</span>
+                    <div class="invisible group-hover:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800 text-white text-[10px] rounded-lg shadow-xl w-56 z-50 pointer-events-none leading-relaxed font-normal">
+                        <span class="font-bold block mb-1 text-center border-b border-slate-600 pb-1 text-blue-300 uppercase tracking-tighter">${GLOSSARY[termKey].term}</span>
+                        ${GLOSSARY[termKey].def}
+                        <svg class="absolute text-slate-800 h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255"><polygon class="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
+                    </div>
+                </div>`;
+            }
+            return `<span class="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold border border-blue-100 shadow-sm">${tag}</span>`;
+        }).join('');
         this.els.tags.innerHTML = tagsHtml;
 
         // --- 2. Alerts & Messages ---
@@ -161,6 +204,9 @@ export class Dashboard {
         // Analysis Lists
         this.els.strengths.innerHTML = analysis.strengths.map(s => `<li>${s}</li>`).join('') || '<li class="text-slate-400 italic text-xs">Analyse en attente...</li>';
         this.els.weaknesses.innerHTML = analysis.weaknesses.map(w => `<li>${w}</li>`).join('') || '<li class="text-slate-400 italic text-xs">Analyse en attente...</li>';
+
+        // Update Glossary to catch terms cited in analysis
+        this.renderGlossary();
     }
 
     renderSplitsTable(splits) {
