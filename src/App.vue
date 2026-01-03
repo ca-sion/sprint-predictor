@@ -41,7 +41,7 @@
     <!-- Footer -->
     <footer class="bg-white border-t border-slate-200 py-8">
       <div class="max-w-7xl mx-auto px-4 text-center">
-        <p class="text-slate-500 text-sm font-medium">CA Sion Sprint Predictor</p>
+        <p class="text-slate-500 text-sm font-medium">Sprint Predictor</p>
         <p class="text-slate-400 text-xs mt-1">
           Développé par <a href="https://michaelravedoni.com" class="underline hover:text-blue-500">MR</a>
         </p>
@@ -57,7 +57,7 @@ import { Athlete } from './models/Athlete.js';
 const currentAthlete = ref(null);
 
 const updateCurrentAthlete = () => {
-  const savedId = localStorage.getItem('casion_current_athlete');
+  const savedId = localStorage.getItem('sprint_predictor_current_athlete');
   if (savedId) {
     const all = Athlete.getAll();
     currentAthlete.value = all[savedId] || null;

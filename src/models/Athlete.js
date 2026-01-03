@@ -55,7 +55,7 @@ export class Athlete {
      * Save to LocalStorage
      */
     save() {
-        const athletes = JSON.parse(localStorage.getItem('casion_athletes') || '{}');
+        const athletes = JSON.parse(localStorage.getItem('sprint_predictor_athletes') || '{}');
         athletes[this.id] = {
             id: this.id,
             name: this.name,
@@ -64,7 +64,7 @@ export class Athlete {
             metrics: this.metrics,
             lastUpdated: this.lastUpdated
         };
-        localStorage.setItem('casion_athletes', JSON.stringify(athletes));
+        localStorage.setItem('sprint_predictor_athletes', JSON.stringify(athletes));
         window.dispatchEvent(new CustomEvent('athlete-updated'));
     }
 
@@ -73,7 +73,7 @@ export class Athlete {
      * @param {string} id 
      */
     static load(id) {
-        const athletes = JSON.parse(localStorage.getItem('casion_athletes') || '{}');
+        const athletes = JSON.parse(localStorage.getItem('sprint_predictor_athletes') || '{}');
         if (athletes[id]) {
             return new Athlete(athletes[id]);
         }
@@ -81,6 +81,6 @@ export class Athlete {
     }
 
     static getAll() {
-        return JSON.parse(localStorage.getItem('casion_athletes') || '{}');
+        return JSON.parse(localStorage.getItem('sprint_predictor_athletes') || '{}');
     }
 }

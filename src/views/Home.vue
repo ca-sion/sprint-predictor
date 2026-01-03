@@ -125,7 +125,7 @@ const createNewAthlete = () => {
 };
 
 const selectAthlete = (id) => {
-  localStorage.setItem('casion_current_athlete', id);
+  localStorage.setItem('sprint_predictor_current_athlete', id);
   router.push('/predictor');
 };
 
@@ -133,16 +133,16 @@ const deleteAthlete = (id) => {
   if (confirm("Supprimer cet athlète ? Cette action est irréversible.")) {
     const all = Athlete.getAll();
     delete all[id];
-    localStorage.setItem('casion_athletes', JSON.stringify(all));
-    if (localStorage.getItem('casion_current_athlete') === id) {
-      localStorage.removeItem('casion_current_athlete');
+    localStorage.setItem('sprint_predictor_athletes', JSON.stringify(all));
+    if (localStorage.getItem('sprint_predictor_current_athlete') === id) {
+      localStorage.removeItem('sprint_predictor_current_athlete');
     }
     loadAthletes();
   }
 };
 
 const exportData = () => {
-  const data = localStorage.getItem('casion_athletes') || '{}';
+  const data = localStorage.getItem('sprint_predictor_athletes') || '{}';
   const blob = new Blob([data], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -162,7 +162,7 @@ const importData = (event) => {
       const data = JSON.parse(e.target.result);
       const current = Athlete.getAll();
       const merged = { ...current, ...data };
-      localStorage.setItem('casion_athletes', JSON.stringify(merged));
+      localStorage.setItem('sprint_predictor_athletes', JSON.stringify(merged));
       loadAthletes();
       alert("Importation réussie !");
     } catch (err) {

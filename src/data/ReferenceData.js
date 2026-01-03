@@ -1,6 +1,5 @@
 /**
- * Reference Data for Casion Sprint Predictor
- * Standards 2026 - Unified & Optimized Structure
+ * Reference Data for Sprint Predictor
  */
 
 // --- 1. INPUT DEFINITIONS (Form Generation) ---

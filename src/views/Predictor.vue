@@ -342,7 +342,7 @@ const loadInitialData = () => {
     } catch (e) { console.error("Error decoding shared data", e); }
   }
 
-  const savedId = localStorage.getItem('casion_current_athlete');
+  const savedId = localStorage.getItem('sprint_predictor_current_athlete');
   if (savedId) {
     const loaded = Athlete.load(savedId);
     if (loaded) athlete.value = loaded;
@@ -389,7 +389,7 @@ const runAnalysis = () => {
 
 const saveAthlete = () => {
   athlete.value.save();
-  localStorage.setItem('casion_current_athlete', athlete.value.id);
+  localStorage.setItem('sprint_predictor_current_athlete', athlete.value.id);
   runAnalysis();
 };
 
