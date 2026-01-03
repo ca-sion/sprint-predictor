@@ -519,11 +519,6 @@ export const ANALYSIS_TEMPLATES = {
   ],
 };
 
-// Backward Compatibility Exports
-export const STANDARDS = {}; // Will be handled dynamically in engine to avoid redundancy
-export const PERFORMANCE_DATA = {};
-export const SPLIT_MODELS = {};
-
 // --- 7. HELPERS ---
 
 /**
