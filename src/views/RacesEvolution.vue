@@ -140,15 +140,62 @@
               >
                 <!-- The Colored Block -->
                 <div 
-                  class="w-full h-full transition-all duration-300 flex items-center justify-center relative overflow-hidden"
+                  class="w-full h-full transition-all duration-300 flex items-center justify-center relative overflow-visible"
                   :style="{ backgroundColor: getCellColor(getRaceSegmentData(race, idx), idx) }"
                 >
-                   <!-- Value Display (Only on hover or if very contrasting) -->
-                   <div v-if="getRaceSegmentData(race, idx)" class="opacity-0 group-hover/cell:opacity-100 transition-opacity z-10 flex flex-col items-center">
-                      <span class="text-xs font-black text-white drop-shadow-md">{{ formatValue(getRaceSegmentData(race, idx)[activeMetric]) }}</span>
-                      <span v-if="pbRace && viewMode === 'heatmap'" class="text-[9px] font-bold text-white/90 drop-shadow-md">
-                        {{ formatDiff(getRaceSegmentData(race, idx)[activeMetric] - getPbValue(idx)) }}
+                   <!-- Main Value (always visible if contrasts) -->
+                   <div v-if="getRaceSegmentData(race, idx)" class="z-0 pointer-events-none">
+                      <span class="text-xs font-black text-white/90 drop-shadow-md">
+                        {{ formatMetricValue(getRaceSegmentData(race, idx)[activeMetric], activeMetric) }}
                       </span>
+                   </div>
+
+                   <!-- Rich Tooltip (Hover) -->
+                   <div v-if="getRaceSegmentData(race, idx)" class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-slate-900 text-white text-xs rounded-xl shadow-xl border border-slate-700 p-3 opacity-0 group-hover/cell:opacity-100 transition-opacity z-50 pointer-events-none">
+                      <div class="font-bold text-slate-400 uppercase text-[9px] mb-2 border-b border-slate-700 pb-1">
+                        {{ templateSegments[idx]?.label }}
+                      </div>
+                      
+                      <div class="space-y-1.5">
+                        <div class="flex justify-between items-center">
+                          <span class="text-slate-400 text-[10px]">Temps</span>
+                          <span class="font-mono font-bold">{{ formatValue(getRaceSegmentData(race, idx).time) }}s</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                          <span class="text-slate-400 text-[10px]">Vitesse</span>
+                          <div class="flex items-center gap-2">
+                             <span class="font-mono font-bold text-blue-400">{{ formatValue(getRaceSegmentData(race, idx).speed) }}</span>
+                             <span v-if="pbRace" :class="getDiffClass(getRaceSegmentData(race, idx).speed - getPbValue(idx, 'speed'), true)">
+                                {{ formatDiff(getRaceSegmentData(race, idx).speed - getPbValue(idx, 'speed')) }}
+                             </span>
+                          </div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                          <span class="text-slate-400 text-[10px]">Fréquence</span>
+                           <div class="flex items-center gap-2">
+                             <span class="font-mono font-bold text-purple-400">{{ getRaceSegmentData(race, idx).frequency > 0 ? formatValue(getRaceSegmentData(race, idx).frequency) : '-' }}</span>
+                             <span v-if="pbRace && getRaceSegmentData(race, idx).frequency > 0" :class="getDiffClass(getRaceSegmentData(race, idx).frequency - getPbValue(idx, 'frequency'), true)">
+                                {{ formatDiff(getRaceSegmentData(race, idx).frequency - getPbValue(idx, 'frequency')) }}
+                             </span>
+                          </div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                          <span class="text-slate-400 text-[10px]">Amplitude</span>
+                           <div class="flex items-center gap-2">
+                             <span class="font-mono font-bold text-emerald-400">{{ getRaceSegmentData(race, idx).stepLength > 0 ? formatValue(getRaceSegmentData(race, idx).stepLength) : '-' }}</span>
+                             <span v-if="pbRace && getRaceSegmentData(race, idx).stepLength > 0" :class="getDiffClass(getRaceSegmentData(race, idx).stepLength - getPbValue(idx, 'stepLength'), true)">
+                                {{ formatDiff(getRaceSegmentData(race, idx).stepLength - getPbValue(idx, 'stepLength')) }}
+                             </span>
+                          </div>
+                        </div>
+                         <div class="flex justify-between items-center mt-1 pt-1 border-t border-slate-700">
+                          <span class="text-slate-500 text-[9px] uppercase font-bold">Pas</span>
+                          <span class="font-mono font-bold text-slate-300">{{ getRaceSegmentData(race, idx).steps || '-' }}</span>
+                        </div>
+                      </div>
+
+                      <!-- Arrow -->
+                      <div class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-900"></div>
                    </div>
                 </div>
               </div>
@@ -259,21 +306,36 @@ const getRaceTotalTime = (race) => {
     return 0;
 };
 
-const getPbValue = (segmentIndex) => {
+const getPbValue = (segmentIndex, metric = null) => {
   if (!pbRace.value) return 0;
   const seg = getRaceSegmentData(pbRace.value, segmentIndex);
-  return seg ? seg[activeMetric.value] : 0;
+  const m = metric || activeMetric.value;
+  return seg ? seg[m] : 0;
+};
+
+const formatMetricValue = (val, metric) => {
+    if (!val || val === 0) return '-';
+    if (metric === 'time') return val.toFixed(2) + 's';
+    return val.toFixed(2);
+};
+
+const getDiffClass = (diff, higherIsBetter = true) => {
+    if (Math.abs(diff) < 0.01) return 'text-slate-500 text-[9px]';
+    const isGood = higherIsBetter ? diff > 0 : diff < 0;
+    return isGood ? 'text-emerald-400 text-[9px] font-bold' : 'text-red-400 text-[9px] font-bold';
 };
 
 // --- Visualization Logic ---
 
 const getCellColor = (segment, index) => {
-  if (!segment || !pbRace.value) return '#f8fafc'; // slate-50 (Empty/Missing)
+  if (!segment || !pbRace.value) return '#f8fafc'; // slate-50
   
   const val = segment[activeMetric.value];
   const pbVal = getPbValue(index);
   
-  if (pbVal === 0) return '#f1f5f9'; // No reference
+  // If value is 0 (e.g. missing steps), return neutral
+  if (!val || val === 0) return '#f1f5f9'; // slate-100
+  if (!pbVal || pbVal === 0) return '#e2e8f0'; // slate-200 (No ref)
   
   if (viewMode.value === 'heatmap') {
     // Intensity mode (Blue scale)
