@@ -180,8 +180,15 @@
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-2">
                   <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Prochain Jalon</p>
-                  <div class="text-xl font-bold text-white">
+                  <div class="text-xl font-bold text-white flex items-center gap-3">
                     {{ nextMilestone?.label || 'Course terminée' }}
+                    <button 
+                      v-if="activeRace.milestones.length > 0" 
+                      @click="resetCaptures" 
+                      class="text-[9px] px-2 py-1 bg-white/10 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded transition-colors uppercase font-bold border border-white/5"
+                    >
+                      Réinitialiser
+                    </button>
                   </div>
                 </div>
                 <div class="flex items-end justify-end gap-3">
@@ -196,9 +203,9 @@
                     <button 
                       v-else 
                       @click="captureTime" 
-                      class="px-8 py-4 bg-white text-slate-900 text-lg font-black rounded-2xl transition-all active:scale-95 shadow-lg shadow-white/10 flex-1 md:flex-none"
+                      class="px-8 py-4 bg-white text-slate-900 text-lg font-black rounded-xl transition-all active:scale-95 shadow-lg shadow-white/10 flex-1 md:flex-none"
                     >
-                      CAPTURER
+                      Capturer jalon
                     </button>
                     <button 
                       v-if="isRecording" 
@@ -212,15 +219,15 @@
                     <button 
                       @click="captureTime" 
                       :disabled="!nextMilestone"
-                      class="px-8 py-4 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-600 text-white text-lg font-black rounded-2xl transition-all active:scale-95 shadow-lg shadow-blue-600/20 flex-1"
+                      class="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-600 text-white text-lg font-black rounded-xl transition-all active:scale-95 shadow-lg shadow-blue-600/20 flex-1"
                     >
-                      CAPTURER LA FRAME
+                      Capturer jalon
                     </button>
                   </template>
                 </div>
               </div>
-              <div class="mt-4 text-[10px] text-slate-500 flex justify-between">
-                <span>Astuce : Appuyez sur la barre d'espace pour capturer le temps. {{ videoUrl ? 'Flèches = Pas à pas. L = Play/Pause.' : '' }}</span>
+              <div class="mt-4 text-[11px] text-slate-300 flex justify-between">
+                <span>Astuce : Barre d'espace = capturer le temps. {{ videoUrl ? 'Flèches = Pas à pas. L = Play/Pause.' : '' }}</span>
                 <span v-if="videoUrl" class="text-blue-500">Mode Analyse Vidéo Actif</span>
               </div>
             </div>
@@ -256,7 +263,18 @@
                         </select>
                       </td>
                       <td class="px-4 py-3">
-                        <input type="number" step="0.001" v-model.number="m.time" @blur="saveActiveRace" class="bg-transparent border-none p-0 text-xs font-mono text-slate-400 w-20">
+                        <div class="flex items-center gap-2">
+                          <input type="number" step="0.001" v-model.number="m.time" @blur="saveActiveRace" class="bg-transparent border-none p-0 text-xs font-mono text-slate-400 w-20">
+                          <button 
+                            @click="syncMilestoneWithCurrent(index)" 
+                            class="p-1 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded opacity-0 group-hover:opacity-100 transition-all"
+                            title="Synchroniser avec le temps actuel"
+                          >
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                          </button>
+                        </div>
                       </td>
                       <td class="px-4 py-3 font-mono font-bold text-blue-600">
                         {{ getRaceTime(m.time) }}
@@ -747,6 +765,21 @@ const captureTime = () => {
   if (!nextMilestone.value && !videoUrl.value) {
     stopRecording();
   }
+};
+
+const resetCaptures = () => {
+  if (confirm("Réinitialiser tous les jalons capturés pour cette course ?")) {
+    activeRace.value.milestones = [];
+    saveActiveRace();
+    currentTime.value = 0;
+    stopRecording();
+  }
+};
+
+const syncMilestoneWithCurrent = (index) => {
+  const timeToSync = videoUrl.value ? videoCurrentTime.value : currentTime.value;
+  activeRace.value.milestones[index].time = parseFloat(timeToSync.toFixed(3));
+  saveActiveRace();
 };
 
 const formatTime = (seconds) => {
