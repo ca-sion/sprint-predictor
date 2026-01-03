@@ -65,6 +65,7 @@ export class Athlete {
             lastUpdated: this.lastUpdated
         };
         localStorage.setItem('casion_athletes', JSON.stringify(athletes));
+        window.dispatchEvent(new CustomEvent('athlete-updated'));
     }
 
     /**

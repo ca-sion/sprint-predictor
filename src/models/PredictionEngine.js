@@ -562,9 +562,16 @@ export class PredictionEngine {
     }
 
     predictHurdlesLong(profile, event, athlete) {
-        const t400 = parseFloat(this.predict400m(profile, athlete).time);
+        const p400 = this.predict400m(profile, athlete);
+        const t400 = parseFloat(p400.time);
         let diff = (athlete.gender === 'F' ? 4.5 : 4.0) + (athlete.category === 'U18' ? 1.0 : 0);
-        return { time: (t400 + diff).toFixed(2), range: 1.0, tags: ["400mH Differential", `T400 + ${diff}s`], sources: [] };
+        return { 
+            time: (t400 + diff).toFixed(2), 
+            range: 1.0, 
+            splits: p400.splits, 
+            tags: ["400mH Differential", `T400 + ${diff}s`], 
+            sources: [] 
+        };
     }
 
     calculateFatigueIndex(metrics, vmax) {
