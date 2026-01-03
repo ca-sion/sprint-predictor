@@ -2,10 +2,10 @@
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
     <div class="text-center mb-12">
       <h2 class="text-3xl font-extrabold text-slate-900 sm:text-4xl">
-        Bienvenue sur <span class="text-blue-600">Sprint Predictor</span>
+        Sprint <span class="text-blue-600">Predictor</span>
       </h2>
-      <p class="mt-4 text-xl text-slate-500">
-        Gérez vos athlètes, analysez leurs performances et prédisez leur potentiel.
+      <p class="mt-4 text-lg text-slate-500">
+        Gérez vos athlètes, analysez leurs courses et prédisez leur potentiel.
       </p>
     </div>
 

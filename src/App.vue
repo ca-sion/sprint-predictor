@@ -88,11 +88,11 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-white border-t border-slate-200 py-8">
+    <footer class="bg-white border-t border-slate-200 py-4">
       <div class="max-w-7xl mx-auto px-4 text-center">
         <p class="text-slate-500 text-sm font-medium">Sprint Predictor</p>
         <p class="text-slate-400 text-xs mt-1">
-          Développé par <a href="https://michaelravedoni.com" class="underline hover:text-blue-500" target="_blank">MR</a>
+          Développé avec <span class="text-[7pt]">♥️</span> en 🇨🇭 par <a href="https://michaelravedoni.com" class="underline hover:text-blue-500" target="_blank">MR</a>
         </p>
       </div>
     </footer>
