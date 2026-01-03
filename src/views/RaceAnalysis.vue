@@ -81,28 +81,33 @@
               </button>
             </div>
 
-            <!-- Capture Mode -->
-            <div class="bg-slate-900 rounded-xl p-6 text-white mb-8">
-              <div class="flex items-center justify-between mb-6">
+            <!-- Capture Tool Block -->
+            <div class="bg-slate-900 rounded-2xl p-6 text-white mb-8 shadow-xl shadow-slate-200/50 overflow-hidden relative border border-slate-800">
+              <!-- Mode Tabs/Status -->
+              <div class="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
                 <div class="flex items-center gap-4">
                   <div class="flex items-center gap-2">
                     <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse" v-if="isRecording"></div>
-                    <h4 class="text-sm font-bold uppercase tracking-widest">{{ videoUrl ? 'Analyse Vidéo' : (isRecording ? 'Enregistrement' : 'Capture') }}</h4>
+                    <h4 class="text-xs font-black uppercase tracking-[0.2em] text-slate-400">
+                      {{ videoUrl ? 'Analyse Vidéo' : (isRecording ? 'Enregistrement' : 'Outil de Capture') }}
+                    </h4>
                   </div>
-                  <label class="cursor-pointer bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-colors border border-slate-700">
-                    <input type="file" accept="video/*" class="hidden" @change="handleVideoUpload">
-                    {{ videoUrl ? 'Changer Vidéo' : 'Charger Vidéo' }}
-                  </label>
-                  <button v-if="videoUrl" @click="videoUrl = null" class="text-[10px] font-bold text-slate-500 hover:text-red-400">Retirer</button>
                 </div>
-                <div class="text-3xl font-mono tabular-nums text-blue-400">
-                  {{ formatTime(videoUrl ? videoCurrentTime : currentTime) }} <span v-if="videoUrl" class="text-sm text-slate-600">/ {{ formatTime(videoDuration) }}</span>
+                <div class="flex items-center gap-2">
+                  <label class="cursor-pointer bg-blue-600 hover:bg-blue-500 px-3 py-1.5 rounded-lg text-[10px] font-black transition-all active:scale-95 flex items-center gap-2">
+                    <input type="file" accept="video/*" class="hidden" @change="handleVideoUpload">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                    {{ videoUrl ? 'Changer' : 'Charger Vidéo' }}
+                  </label>
+                  <button v-if="videoUrl" @click="videoUrl = null" class="p-1.5 text-slate-500 hover:text-red-400 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                  </button>
                 </div>
               </div>
 
               <!-- Video Player Area -->
-              <div v-if="videoUrl" class="mb-6 space-y-4">
-                <div class="aspect-video bg-black rounded-xl overflow-hidden relative group border border-slate-800">
+              <div v-if="videoUrl" class="mb-6 space-y-0 rounded-xl overflow-hidden border border-white/10 bg-black">
+                <div class="aspect-video relative group">
                   <video 
                     ref="videoRef" 
                     :src="videoUrl" 
@@ -112,15 +117,20 @@
                     @click="togglePlay"
                   ></video>
                   
+                  <!-- Overlay Timecode (Visual Guide) -->
+                  <div class="absolute top-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 font-mono text-xs text-blue-400 tabular-nums">
+                    T: {{ formatTime(videoCurrentTime) }}
+                  </div>
+
                   <!-- Play Overlay -->
-                  <div v-if="videoPaused" @click="togglePlay" class="absolute inset-0 flex items-center justify-center bg-black/20 cursor-pointer group-hover:bg-black/40 transition-all">
-                    <div class="w-16 h-16 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20">
+                  <div v-if="videoPaused" @click="togglePlay" class="absolute inset-0 flex items-center justify-center bg-black/20 cursor-pointer hover:bg-black/40 transition-all">
+                    <div class="w-16 h-16 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 scale-90 hover:scale-100 transition-transform">
                       <svg class="w-8 h-8 text-white translate-x-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                     </div>
                   </div>
 
-                  <!-- Interactive Seeker -->
-                  <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                  <!-- Integrated Seeker -->
+                  <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 via-black/40 to-transparent pt-12">
                     <input 
                       type="range" 
                       min="0" 
@@ -128,107 +138,129 @@
                       step="0.001"
                       v-model.number="videoCurrentTime"
                       @input="seekVideo"
-                      class="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                      class="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-blue-500 hover:h-2 transition-all"
                     >
                   </div>
                 </div>
 
-                <div class="flex flex-wrap items-center justify-between gap-4 bg-slate-800/50 p-3 rounded-xl border border-white/5">
-                  <div class="flex items-center gap-3">
-                    <button @click="togglePlay" class="p-2 hover:bg-white/10 rounded-lg transition-colors">
-                      <svg v-if="videoPaused" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                      <svg v-else class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                <!-- Pro Video Controls Bar -->
+                <div class="flex items-center justify-between p-4 bg-slate-800/80 backdrop-blur-sm border-t border-white/5">
+                  <div class="flex items-center gap-4">
+                    <button @click="togglePlay" class="w-10 h-10 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-full transition-colors">
+                      <svg v-if="videoPaused" class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                      <svg v-else class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
                     </button>
-                    <div class="h-4 w-px bg-slate-700"></div>
-                    <div class="flex gap-1">
-                      <button @click="stepFrame(-1)" class="p-2 hover:bg-white/10 rounded-lg text-xs font-bold text-slate-400" title="Reculer 1s (Shift+Gauche)">
-                        -1s
-                      </button>
-                      <button @click="stepFrame(-0.01)" class="p-2 hover:bg-white/10 rounded-lg text-xs font-bold" title="Reculer 1 frame (Gauche)">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                      </button>
-                      <button @click="stepFrame(0.01)" class="p-2 hover:bg-white/10 rounded-lg text-xs font-bold" title="Avancer 1 frame (Droite)">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                      </button>
-                      <button @click="stepFrame(1)" class="p-2 hover:bg-white/10 rounded-lg text-xs font-bold text-slate-400" title="Avancer 1s (Shift+Droite)">
-                        +1s
+                    
+                    <div class="flex items-center bg-black/30 rounded-xl p-1 border border-white/5">
+                      <button 
+                        v-for="rate in [0.25, 0.5, 1]" 
+                        :key="rate"
+                        @click="videoPlaybackRate = rate"
+                        :class="['px-2 py-1.5 rounded text-[9px] font-black transition-all', videoPlaybackRate === rate ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-white']"
+                      >
+                        {{ rate }}x
                       </button>
                     </div>
                   </div>
 
-                  <div class="flex items-center gap-2">
-                    <span class="text-[10px] font-bold text-slate-500 uppercase mr-1">Vitesse :</span>
+                  <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-1 bg-black/30 px-2 py-1 rounded-lg border border-white/5">
+                      <button @click="stepFrame(-1)" class="px-2 py-1.5 hover:bg-white/5 rounded-lg text-[10px] font-black text-slate-500" title="Shift+Gauche">-1s</button>
+                      <button @click="stepFrame(-0.01)" class="p-2 hover:bg-white/5 rounded-lg text-white" title="Gauche">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                      </button>
+                      <button @click="stepFrame(0.01)" class="p-2 hover:bg-white/5 rounded-lg text-white" title="Droite">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                      </button>
+                      <button @click="stepFrame(1)" class="px-2 py-1.5 hover:bg-white/5 rounded-lg text-[10px] font-black text-slate-500" title="Shift+Droite">+1s</button>
+                    </div>
                     <button 
-                      v-for="rate in [0.25, 0.5, 1]" 
-                      :key="rate" 
-                      @click="videoPlaybackRate = rate"
-                      :class="['px-2 py-1 rounded text-[10px] font-bold transition-colors', videoPlaybackRate === rate ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-400 hover:text-white']"
+                      @click="setAsStart(videoCurrentTime)" 
+                      class="px-3 py-2 bg-blue-600/10 hover:bg-blue-600 text-blue-400 hover:text-white rounded-lg text-[10px] font-black transition-all border border-blue-600/20"
                     >
-                      {{ rate }}x
+                      DÉPART (0m)
                     </button>
                   </div>
-                  
-                  <button 
-                    @click="setAsStart(videoCurrentTime)" 
-                    class="px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white rounded-lg text-[10px] font-bold transition-all border border-blue-600/30"
-                  >
-                    Set as Start (0m)
-                  </button>
                 </div>
               </div>
 
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="space-y-2">
-                  <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Prochain Jalon</p>
-                  <div class="text-xl font-bold text-white flex items-center gap-3">
-                    {{ nextMilestone?.label || 'Course terminée' }}
-                    <button 
-                      v-if="activeRace.milestones.length > 0" 
-                      @click="resetCaptures" 
-                      class="text-[9px] px-2 py-1 bg-white/10 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded transition-colors uppercase font-bold border border-white/5"
-                    >
-                      Réinitialiser
-                    </button>
+              <!-- Main Interactive Area (Time & Capture) -->
+              <div class="flex flex-col items-center justify-center">
+                <div class="text-center">
+                  <div class="text-2xl font-mono tabular-nums font-black text-blue-400 tracking-tighter drop-shadow-2xl mb-2">
+                    {{ formatTime(videoUrl ? videoCurrentTime : currentTime) }}
+                    <span class="text-[10px] font-mono text-slate-500 uppercase tracking-[0.1em]" v-if="videoUrl">
+                    / {{ formatTime(videoDuration) }}
+                  </span>
                   </div>
                 </div>
-                <div class="flex items-end justify-end gap-3">
-                  <template v-if="!videoUrl">
-                    <button 
-                      v-if="!isRecording" 
-                      @click="startRecording" 
-                      class="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-900/20"
-                    >
-                      Démarrer (Start)
-                    </button>
-                    <button 
-                      v-else 
-                      @click="captureTime" 
-                      class="px-8 py-4 bg-white text-slate-900 text-lg font-black rounded-xl transition-all active:scale-95 shadow-lg shadow-white/10 flex-1 md:flex-none"
-                    >
-                      Capturer jalon
-                    </button>
-                    <button 
-                      v-if="isRecording" 
-                      @click="stopRecording" 
-                      class="p-4 bg-slate-800 hover:bg-red-900/40 text-slate-400 hover:text-red-400 rounded-xl transition-all"
-                    >
-                      Stop
-                    </button>
-                  </template>
-                  <template v-else>
-                    <button 
-                      @click="captureTime" 
-                      :disabled="!nextMilestone"
-                      class="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-600 text-white text-lg font-black rounded-xl transition-all active:scale-95 shadow-lg shadow-blue-600/20 flex-1"
-                    >
-                      Capturer jalon
-                    </button>
-                  </template>
+
+                <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                  <div class="bg-white/5 rounded-2xl p-4 border border-white/5">
+                    <p class="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1">Cible</p>
+                    <div class="flex items-center justify-between">
+                      <div class="text-xl font-bold text-white">
+                        {{ nextMilestone?.label || 'Séquence terminée' }}
+                      </div>
+                      <button 
+                        v-if="activeRace.milestones.length > 0" 
+                        @click="resetCaptures" 
+                        class="text-[9px] px-2 py-1 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-lg transition-all uppercase font-black border border-red-500/20"
+                      >
+                        Réinitialiser
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="flex gap-3">
+                    <template v-if="!videoUrl">
+                      <button 
+                        v-if="!isRecording" 
+                        @click="startRecording" 
+                        class="flex-1 py-5 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-2xl transition-all shadow-xl shadow-blue-900/40 text-lg uppercase tracking-wider"
+                      >
+                        Démarrer
+                      </button>
+                      <button 
+                        v-else 
+                        @click="captureTime" 
+                        class="flex-[2] py-5 bg-white text-slate-900 sm:text-xl font-black rounded-2xl transition-all active:scale-95 shadow-xl shadow-white/10 uppercase tracking-widest"
+                      >
+                        Capturer
+                      </button>
+                      <button 
+                        v-if="isRecording" 
+                        @click="stopRecording" 
+                        class="flex-1 py-5 bg-slate-800 hover:bg-red-600 text-slate-400 hover:text-white rounded-2xl transition-all font-black uppercase text-xs"
+                      >
+                        Stop
+                      </button>
+                    </template>
+                    <template v-else>
+                      <button 
+                        @click="captureTime" 
+                        :disabled="!nextMilestone"
+                        :class="['flex-1 py-6 sm:text-xl font-black rounded-2xl transition-all active:scale-95 shadow-xl uppercase tracking-widest', nextMilestone ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/40' : 'bg-slate-800 text-slate-600 cursor-not-allowed']"
+                      >
+                        {{ nextMilestone ? 'Capturer Frame' : 'Terminé' }}
+                      </button>
+                    </template>
+                  </div>
                 </div>
               </div>
-              <div class="mt-4 text-[11px] text-slate-300 flex justify-between">
-                <span>Astuce : Barre d'espace = capturer le temps. {{ videoUrl ? 'Flèches = Pas à pas. L = Play/Pause.' : '' }}</span>
-                <span v-if="videoUrl" class="text-blue-500">Mode Analyse Vidéo Actif</span>
+
+              <!-- Shortcut Hint Footer -->
+              <div class="mt-6 pt-4 border-t border-white/5 text-[10px] text-slate-400 flex justify-between font-bold">
+                <div class="flex gap-4">
+                  <span>ESPACE : Capture</span>
+                  <span>FLÈCHES : Pas-à-pas</span>
+                  <span>SHIFT+FLÈCHES : +/- 1s</span>
+                  <span>L : Play/Pause</span>
+                </div>
+                <div v-if="videoUrl" class="text-blue-500 flex items-center gap-1 animate-pulse">
+                  <div class="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                  ANALYSE VIDÉO ACTIVE
+                </div>
               </div>
             </div>
 
