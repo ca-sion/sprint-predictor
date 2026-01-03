@@ -91,7 +91,7 @@
 
         <div class="bg-blue-600 rounded-2xl p-6 shadow-lg shadow-blue-500/20 text-white">
           <h3 class="text-sm font-bold uppercase tracking-widest mb-2 opacity-80">Prochainement</h3>
-          <p class="text-sm font-medium mb-4">Analyse de courses de compétition (découpage vidéo et splits automatiques).</p>
+          <p class="text-sm font-medium mb-4">Analyse de courses avec découpage vidéo.</p>
           <div class="inline-block px-3 py-1 bg-white/20 rounded-full text-[10px] font-bold">WIP</div>
         </div>
       </div>
@@ -134,7 +134,7 @@ const selectAthlete = (id) => {
 
 const analyzeAthlete = (id) => {
   localStorage.setItem('sprint_predictor_current_athlete', id);
-  router.push({ path: '/analysis', query: { athleteId: id } });
+  router.push({ path: '/races-analysis', query: { athleteId: id } });
 };
 
 const deleteAthlete = (id) => {

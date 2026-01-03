@@ -12,8 +12,8 @@
         
         <nav class="hidden md:flex items-center space-x-6">
           <router-link to="/" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors" active-class="text-blue-600">Accueil</router-link>
-          <router-link to="/predictor" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors" active-class="text-blue-600">Predictor</router-link>
-          <span class="text-sm font-medium text-slate-300 cursor-not-allowed" title="Bientôt disponible">Analyse de course</span>
+          <router-link to="/predictor" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors" active-class="text-blue-600">Analyse</router-link>
+          <router-link to="/races-analysis" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors" active-class="text-blue-600">Courses</router-link>
         </nav>
 
         <div class="flex items-center space-x-3">
@@ -21,7 +21,7 @@
             {{ currentAthlete.name }}
           </div>
           <router-link to="/predictor" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm">
-            Ouvrir l'App
+            Profile & PB
           </router-link>
         </div>
       </div>

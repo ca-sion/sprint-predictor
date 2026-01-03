@@ -6,7 +6,7 @@ import RaceAnalysis from '../views/RaceAnalysis.vue';
 const routes = [
   { path: '/', name: 'Home', component: Home },
   { path: '/predictor', name: 'Predictor', component: Predictor },
-  { path: '/analysis', name: 'RaceAnalysis', component: RaceAnalysis },
+  { path: '/races-analysis', name: 'RaceAnalysis', component: RaceAnalysis },
 ];
 
 export const router = createRouter({

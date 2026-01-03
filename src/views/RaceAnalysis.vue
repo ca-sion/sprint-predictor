@@ -6,10 +6,10 @@
         <nav class="flex mb-2" aria-label="Breadcrumb">
           <router-link to="/" class="text-xs font-semibold text-slate-500 hover:text-blue-600 uppercase tracking-wider">Tableau de bord</router-link>
           <span class="mx-2 text-slate-300">/</span>
-          <span class="text-xs font-semibold text-slate-900 uppercase tracking-wider">Analyse de Course</span>
+          <span class="text-xs font-semibold text-slate-900 uppercase tracking-wider">Analyse de courses</span>
         </nav>
         <h2 class="text-3xl font-extrabold text-slate-900">
-          Analyses de <span class="text-blue-600">{{ athlete?.name || 'l\'athlète' }}</span>
+          Courses de <span class="text-blue-600">{{ athlete?.name || 'l\'athlète' }}</span>
         </h2>
       </div>
       
@@ -18,7 +18,7 @@
           <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
           </svg>
-          Nouvelle Analyse
+          Nouvelle course
         </button>
       </div>
     </div>
@@ -356,7 +356,7 @@
           <svg class="w-16 h-16 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
           </svg>
-          <p class="font-bold">Sélectionnez une course pour voir l\'analyse</p>
+          <p class="font-bold">Sélectionnez une course pour voir son analyse</p>
           <p class="text-sm">Ou créez-en une nouvelle pour commencer le découpage.</p>
         </div>
       </div>
@@ -366,7 +366,7 @@
     <div v-if="showNewRaceModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
       <div class="bg-white rounded-3xl shadow-xl w-full max-w-md overflow-hidden">
         <div class="p-6 border-b border-slate-100">
-          <h3 class="text-xl font-bold text-slate-900">Nouvelle Analyse</h3>
+          <h3 class="text-xl font-bold text-slate-900">Nouvelle course</h3>
         </div>
         <div class="p-6 space-y-4">
           <div>
@@ -386,7 +386,7 @@
         </div>
         <div class="p-6 bg-slate-50 flex gap-3">
           <button @click="showNewRaceModal = false" class="flex-1 px-4 py-3 text-sm font-bold text-slate-500 hover:text-slate-700 transition-colors">Annuler</button>
-          <button @click="createNewRace" class="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-all">Créer l\'analyse</button>
+          <button @click="createNewRace" class="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-all">Créer l'analyse</button>
         </div>
       </div>
     </div>
