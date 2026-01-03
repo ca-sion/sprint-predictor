@@ -96,7 +96,10 @@
           </div>
           <div class="relative">
             <select v-model="targetEvent" @change="runAnalysis" class="appearance-none bg-white border border-slate-300 hover:border-blue-400 rounded-lg pl-4 pr-10 py-2 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer shadow-sm">
+              <option value="50m">50m</option>
               <option value="60m">60m</option>
+              <option value="50mH">50m Haies</option>
+              <option value="60mH">60m Haies</option>
               <option value="100m">100m</option>
               <option value="200m">200m</option>
               <option value="400m">400m</option>

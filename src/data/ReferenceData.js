@@ -12,6 +12,8 @@ export const INPUT_GROUPS = [
         fields: [
             { id: 'pb_50m', label: 'PB 50m', unit: 's', placeholder: '6.xx', step: 0.01 },
             { id: 'pb_60m', label: 'PB 60m', unit: 's', placeholder: '7.xx', step: 0.01 },
+            { id: 'pb_50mh', label: 'PB 50m Haies', unit: 's', placeholder: '6.xx', step: 0.01 },
+            { id: 'pb_60mh', label: 'PB 60m Haies', unit: 's', placeholder: '7.xx', step: 0.01 },
             { id: 'pb_100m', label: 'PB 100m', unit: 's', placeholder: '10.xx', step: 0.01 },
             { id: 'pb_200m', label: 'PB 200m', unit: 's', placeholder: '21.xx', step: 0.01 },
             { id: 'pb_400m', label: 'PB 400m', unit: 's', placeholder: '48.xx', step: 0.01 },
@@ -170,6 +172,64 @@ export const AGE_CATEGORIES = {
 
 // --- 4. THE CORE DATA TREE ---
 export const ATHLETICS_DATA = {
+    '50m': {
+        'M': {
+            'ELITE': { standards: { INTERNATIONAL: 5.65, NATIONAL: 5.85 }, performance_ranges: { min: 5.70, max: 5.90 } },
+            'U20': { standards: { NATIONAL: 6.10 }, performance_ranges: { min: 6.00, max: 6.30 } }
+        },
+        'F': {
+            'ELITE': { standards: { INTERNATIONAL: 6.20, NATIONAL: 6.45 }, performance_ranges: { min: 6.25, max: 6.55 } },
+            'U20': { standards: { NATIONAL: 6.75 }, performance_ranges: { min: 6.65, max: 6.95 } }
+        }
+    },
+    '60m': {
+        'M': {
+            'ELITE': {
+                standards: { INTERNATIONAL: 6.55, NATIONAL: 6.75 },
+                performance_ranges: { min: 6.60, max: 6.80 },
+                tests: { fly30m: { min: 2.85, max: 2.95 }, block30m: { target: 3.80 } }
+            },
+            'U20': {
+                standards: { NATIONAL: 6.95 },
+                performance_ranges: { min: 6.90, max: 7.15 }
+            }
+        },
+        'F': {
+            'ELITE': {
+                standards: { INTERNATIONAL: 7.15, NATIONAL: 7.40 },
+                performance_ranges: { min: 7.20, max: 7.50 },
+                tests: { fly30m: { min: 3.20, max: 3.35 }, block30m: { target: 4.15 } }
+            },
+            'U20': {
+                standards: { NATIONAL: 7.70 },
+                performance_ranges: { min: 7.60, max: 7.95 }
+            }
+        }
+    },
+    '50mH': {
+        'M': {
+            'ELITE': { standards: { INTERNATIONAL: 6.45, NATIONAL: 6.75 }, performance_ranges: { min: 6.50, max: 6.85 }, specs: { start: 13.72, space: 9.14, height: 1.06 } },
+            'U20': { specs: { start: 13.72, space: 9.14, height: 0.99 } },
+            'U18': { specs: { start: 13.72, space: 9.14, height: 0.91 } }
+        },
+        'F': {
+            'ELITE': { standards: { INTERNATIONAL: 6.85, NATIONAL: 7.20 }, performance_ranges: { min: 6.95, max: 7.30 }, specs: { start: 13.0, space: 8.5, height: 0.84 } },
+            'U20': { specs: { start: 13.0, space: 8.5, height: 0.84 } },
+            'U18': { specs: { start: 13.0, space: 8.5, height: 0.76 } }
+        }
+    },
+    '60mH': {
+        'M': {
+            'ELITE': { standards: { INTERNATIONAL: 7.55, NATIONAL: 7.95 }, performance_ranges: { min: 7.60, max: 8.10 }, specs: { start: 13.72, space: 9.14, height: 1.06 } },
+            'U20': { standards: { NATIONAL: 8.30 }, specs: { start: 13.72, space: 9.14, height: 0.99 } },
+            'U18': { specs: { start: 13.72, space: 9.14, height: 0.91 } }
+        },
+        'F': {
+            'ELITE': { standards: { INTERNATIONAL: 8.05, NATIONAL: 8.50 }, performance_ranges: { min: 8.10, max: 8.65 }, specs: { start: 13.0, space: 8.5, height: 0.84 } },
+            'U20': { standards: { NATIONAL: 8.90 }, specs: { start: 13.0, space: 8.5, height: 0.84 } },
+            'U18': { specs: { start: 13.0, space: 8.5, height: 0.76 } }
+        }
+    },
     '100m': {
         'M': {
             'ELITE': {
@@ -332,59 +392,97 @@ export const CONTACT_TIME_TARGETS = {
 
 // --- 5. DISCIPLINES CONFIG (Milestones for Capture) ---
 export const DISCIPLINES_CONFIG = {
-    '100m': [
-        { label: 'Départ (0m)', type: 'split', distance: 0 },
-        { label: '30m', type: 'split', distance: 30 },
-        { label: '50m', type: 'split', distance: 50 },
-        { label: '60m', type: 'split', distance: 60 },
-        { label: 'Arrivée (100m)', type: 'split', distance: 100 },
-    ],
-    '110mH': [
-        { label: 'Départ (0m)', type: 'split', distance: 0 },
-        ...Array.from({ length: 10 }, (_, i) => (
-            [
-                { label: `H${i + 1} Take-off`, type: 'takeoff', distance: 13.72 + i * 9.14 - 2 },
-                { label: `H${i + 1} Touchdown`, type: 'touchdown', distance: 13.72 + i * 9.14 }
-            ]
-        )).flat(),
-        { label: 'Arrivée (110m)', type: 'split', distance: 110 },
-    ],
-    '100mH': [
-        { label: 'Départ (0m)', type: 'split', distance: 0 },
-        ...Array.from({ length: 10 }, (_, i) => (
-            [
-                { label: `H${i + 1} Take-off`, type: 'takeoff', distance: 13.0 + i * 8.5 - 2 },
-                { label: `H${i + 1} Touchdown`, type: 'touchdown', distance: 13.0 + i * 8.5 }
-            ]
-        )).flat(),
-        { label: 'Arrivée (100m)', type: 'split', distance: 100 },
-    ],
-    '200m': [
-        { label: 'Départ (0m)', type: 'split', distance: 0 },
-        { label: '30m', type: 'split', distance: 30 },
-        { label: '100m', type: 'split', distance: 100 },
-        { label: 'Arrivée (200m)', type: 'split', distance: 200 },
-    ],
-    '400m': [
-        { label: 'Départ (0m)', type: 'split', distance: 0 },
-        { label: '100m', type: 'split', distance: 100 },
-        { label: '200m', type: 'split', distance: 200 },
-        { label: '300m', type: 'split', distance: 300 },
-        { label: 'Arrivée (400m)', type: 'split', distance: 400 },
-    ],
-    '400mH': [
-        { label: 'Départ (0m)', type: 'split', distance: 0 },
-        ...Array.from({ length: 10 }, (_, i) => (
-            [
-                { label: `H${i + 1} Touchdown`, type: 'touchdown', distance: 45.0 + i * 35.0 }
-            ]
-        )).flat(),
-        { label: 'Arrivée (400m)', type: 'split', distance: 400 },
-    ]
+  "50m": [
+    { label: "Départ (0m)", type: "split", distance: 0 },
+    { label: "20m", type: "split", distance: 20 },
+    { label: "30m", type: "split", distance: 30 },
+    { label: "Arrivée (50m)", type: "split", distance: 50 },
+  ],
+  "60m": [
+    { label: "Départ (0m)", type: "split", distance: 0 },
+    { label: "30m", type: "split", distance: 30 },
+    { label: "Arrivée (60m)", type: "split", distance: 60 },
+  ],
+  "50mH": [
+    { label: "Départ (0m)", type: "split", distance: 0 },
+    ...Array.from({ length: 4 }, (_, i) => [
+      { label: `H${i + 1} Take-off`, type: "takeoff", distance: 13.0 + i * 8.5 - 2 },
+      { label: `H${i + 1} Touchdown`, type: "touchdown", distance: 13.0 + i * 8.5 },
+    ]).flat(),
+    { label: "Arrivée (50m)", type: "split", distance: 50 },
+  ],
+  "60mH": [
+    { label: "Départ (0m)", type: "split", distance: 0 },
+    ...Array.from({ length: 5 }, (_, i) => [
+      { label: `H${i + 1} Take-off`, type: "takeoff", distance: 13.0 + i * 8.5 - 2 },
+      { label: `H${i + 1} Touchdown`, type: "touchdown", distance: 13.0 + i * 8.5 },
+    ]).flat(),
+    { label: "Arrivée (60m)", type: "split", distance: 60 },
+  ],
+  "100m": [
+    { label: "Départ (0m)", type: "split", distance: 0 },
+    { label: "30m", type: "split", distance: 30 },
+    { label: "50m", type: "split", distance: 50 },
+    { label: "60m", type: "split", distance: 60 },
+    { label: "Arrivée (100m)", type: "split", distance: 100 },
+  ],
+  "110mH": [
+    { label: "Départ (0m)", type: "split", distance: 0 },
+    ...Array.from({ length: 10 }, (_, i) => [
+      { label: `H${i + 1} Take-off`, type: "takeoff", distance: 13.72 + i * 9.14 - 2 },
+      { label: `H${i + 1} Touchdown`, type: "touchdown", distance: 13.72 + i * 9.14 },
+    ]).flat(),
+    { label: "Arrivée (110m)", type: "split", distance: 110 },
+  ],
+  "100mH": [
+    { label: "Départ (0m)", type: "split", distance: 0 },
+    ...Array.from({ length: 10 }, (_, i) => [
+      { label: `H${i + 1} Take-off`, type: "takeoff", distance: 13.0 + i * 8.5 - 2 },
+      { label: `H${i + 1} Touchdown`, type: "touchdown", distance: 13.0 + i * 8.5 },
+    ]).flat(),
+    { label: "Arrivée (100m)", type: "split", distance: 100 },
+  ],
+  "200m": [
+    { label: "Départ (0m)", type: "split", distance: 0 },
+    { label: "30m", type: "split", distance: 30 },
+    { label: "100m", type: "split", distance: 100 },
+    { label: "Arrivée (200m)", type: "split", distance: 200 },
+  ],
+  "400m": [
+    { label: "Départ (0m)", type: "split", distance: 0 },
+    { label: "100m", type: "split", distance: 100 },
+    { label: "200m", type: "split", distance: 200 },
+    { label: "300m", type: "split", distance: 300 },
+    { label: "Arrivée (400m)", type: "split", distance: 400 },
+  ],
+  "400mH": [
+    { label: "Départ (0m)", type: "split", distance: 0 },
+    ...Array.from({ length: 10 }, (_, i) => [{ label: `H${i + 1} Touchdown`, type: "touchdown", distance: 45.0 + i * 35.0 }]).flat(),
+    { label: "Arrivée (400m)", type: "split", distance: 400 },
+  ],
 };
 
 // --- 6. ANALYSIS TEMPLATES (Custom Intervals) ---
 export const ANALYSIS_TEMPLATES = {
+  "50m": [
+    { label: "Mise en action", start: 0, end: 20, type: "accel" },
+    { label: "Vitesse", start: 20, end: 50, type: "total" },
+  ],
+  "60m": [
+    { label: "Départ", start: 0, end: 30, type: "accel" },
+    { label: "Transition", start: 30, end: 60, type: "vmax" },
+    { label: "60m", start: 0, end: 60, type: "total" },
+  ],
+  "50mH": [
+    { label: "Mise en action (H1)", start: 0, end: 13.0, type: "accel" },
+    { label: "Inter-haies (H1-H4)", start: 13.0, end: 38.5, type: "rhythm" },
+    { label: "Final", start: 38.5, end: 50, type: "finish" },
+  ],
+  "60mH": [
+    { label: "Mise en action (H1)", start: 0, end: 13.0, type: "accel" },
+    { label: "Inter-haies (H1-H5)", start: 13.0, end: 47.0, type: "rhythm" },
+    { label: "Final", start: 47.0, end: 60, type: "finish" },
+  ],
   "100m": [
     { label: "Départ", start: 0, end: 30, type: "accel" },
     { label: "Transition / Vmax", start: 30, end: 60, type: "vmax" },
@@ -425,3 +523,90 @@ export const ANALYSIS_TEMPLATES = {
 export const STANDARDS = {}; // Will be handled dynamically in engine to avoid redundancy
 export const PERFORMANCE_DATA = {};
 export const SPLIT_MODELS = {};
+
+// --- 7. HELPERS ---
+
+/**
+ * Get hurdle specifications for a specific context
+ */
+export const getHurdleSpecs = (event, gender = 'M', category = 'ELITE') => {
+    const eventNode = ATHLETICS_DATA[event];
+    if (!eventNode) return null;
+    
+    const genderNode = eventNode[gender] || eventNode['M'];
+    if (!genderNode) return null;
+    
+    // Try to find specs in the specific category, then fall back to ELITE
+    const catData = genderNode[category] || genderNode['ELITE'];
+    if (catData?.specs) {
+        // Ensure start and space are present, if not, try to get them from ELITE
+        const specs = { ...catData.specs };
+        if (!specs.start || !specs.space) {
+            const eliteSpecs = genderNode['ELITE']?.specs || {};
+            specs.start = specs.start || eliteSpecs.start;
+            specs.space = specs.space || eliteSpecs.space;
+        }
+        return specs;
+    }
+    
+    return genderNode['ELITE']?.specs || null;
+};
+
+/**
+ * Get dynamic discipline milestones based on athlete profile
+ */
+export const getDynamicDisciplineConfig = (discipline, gender = 'M', category = 'ELITE') => {
+    // If it's a hurdle race, we might need to adjust distances
+    if (discipline.toLowerCase().includes('h')) {
+        const specs = getHurdleSpecs(discipline, gender, category);
+        if (specs && specs.start && specs.space) {
+            const { start, space } = specs;
+            const hCount = (discipline === '50mH' ? 4 : (discipline === '60mH' ? 5 : 10));
+            const totalDist = parseInt(discipline);
+            
+            return [
+                { label: "Départ (0m)", type: "split", distance: 0 },
+                ...Array.from({ length: hCount }, (_, i) => [
+                    { label: `H${i + 1} Take-off`, type: "takeoff", distance: start + i * space - 2 },
+                    { label: `H${i + 1} Touchdown`, type: "touchdown", distance: start + i * space },
+                ]).flat(),
+                { label: `Arrivée (${totalDist}m)`, type: "split", distance: totalDist },
+            ];
+        }
+    }
+    
+    // Default to static config
+    return DISCIPLINES_CONFIG[discipline] || [];
+};
+
+/**
+ * Get dynamic analysis template based on athlete profile
+ */
+export const getDynamicAnalysisTemplate = (discipline, gender = 'M', category = 'ELITE') => {
+    const template = ANALYSIS_TEMPLATES[discipline];
+    if (!template) return [];
+
+    // For hurdles, we might need to adjust the start/end distances in the template
+    if (discipline.toLowerCase().includes('h')) {
+        const specs = getHurdleSpecs(discipline, gender, category);
+        if (specs && specs.start && specs.space) {
+            const { start, space } = specs;
+            const hCount = (discipline === '50mH' ? 4 : (discipline === '60mH' ? 5 : 10));
+            
+            return template.map(item => {
+                const newItem = { ...item };
+                if (item.label.includes('H1')) {
+                    newItem.end = start;
+                } else if (item.label.includes('Inter-haies')) {
+                    newItem.start = start;
+                    newItem.end = start + (hCount - 1) * space;
+                } else if (item.type === 'finish') {
+                    newItem.start = start + (hCount - 1) * space;
+                }
+                return newItem;
+            });
+        }
+    }
+
+    return template;
+};

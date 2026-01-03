@@ -398,7 +398,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { Athlete } from '../models/Athlete.js';
 import { Race } from '../models/Race.js';
-import { ANALYSIS_TEMPLATES, DISCIPLINES_CONFIG } from '../data/ReferenceData.js';
+import { ANALYSIS_TEMPLATES, DISCIPLINES_CONFIG, getDynamicDisciplineConfig, getDynamicAnalysisTemplate } from '../data/ReferenceData.js';
 
 const route = useRoute();
 const athlete = ref(null);
@@ -406,7 +406,7 @@ const races = ref([]);
 const activeRace = ref(null);
 const showNewRaceModal = ref(false);
 
-const disciplines = ['100m', '200m', '400m', '100mH', '110mH', '400mH'];
+const disciplines = ['50m', '60m', '100m', '200m', '400m', '50mH', '60mH', '100mH', '110mH', '400mH'];
 const newRaceForm = ref({
   discipline: '100m',
   name: '',
@@ -421,7 +421,11 @@ const timerInterval = ref(null);
 
 const nextMilestone = computed(() => {
   if (!activeRace.value) return null;
-  const config = DISCIPLINES_CONFIG[activeRace.value.discipline] || [];
+  const config = getDynamicDisciplineConfig(
+    activeRace.value.discipline, 
+    athlete.value?.gender, 
+    athlete.value?.category
+  );
   const existingCount = activeRace.value.milestones.length;
   return config[existingCount] || null;
 });
@@ -475,7 +479,11 @@ const hurdleAnalysis = computed(() => {
 const customIntervals = computed(() => {
   if (!activeRace.value) return [];
   const raceInstance = activeRace.value instanceof Race ? activeRace.value : new Race(activeRace.value);
-  const template = ANALYSIS_TEMPLATES[activeRace.value.discipline] || [];
+  const template = getDynamicAnalysisTemplate(
+    activeRace.value.discipline,
+    athlete.value?.gender,
+    athlete.value?.category
+  );
   return raceInstance.calculateIntervals(template);
 });
 

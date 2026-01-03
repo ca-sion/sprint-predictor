@@ -105,7 +105,10 @@ export class Race {
 
         const touchdowns = this.milestones.filter(m => m.type === 'touchdown').sort((a, b) => a.distance - b.distance);
         const start = this.milestones.find(m => m.distance === 0) || { distance: 0, time: 0 };
-        const finish = this.milestones.find(m => m.distance === (this.discipline === '110mH' ? 110 : (this.discipline === '400mH' ? 400 : 100)));
+        
+        // Find finish milestone - use the distance corresponding to the discipline name
+        const raceDist = parseInt(this.discipline);
+        const finish = this.milestones.find(m => m.distance === raceDist);
 
         // 1. Start to H1
         if (touchdowns.length > 0) {

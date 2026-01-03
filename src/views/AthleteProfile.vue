@@ -56,7 +56,7 @@
       <div class="md:col-span-2 space-y-6">
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
           <div class="p-6 border-b border-slate-100 bg-slate-50/50">
-            <h3 class="text-lg font-bold text-slate-900">Records <param name="" value="">ersonnels (PB)</h3>
+            <h3 class="text-lg font-bold text-slate-900">Records personnels (PB)</h3>
             <p class="text-sm text-slate-500">Mettez à jour les meilleures performances de l'athlète.</p>
           </div>
           

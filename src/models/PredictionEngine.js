@@ -53,8 +53,17 @@ export class PredictionEngine {
         };
 
         switch (targetEvent) {
+            case '50m':
+                result = this.predictFlatSprint(profile, 50, athlete);
+                break;
             case '60m':
                 result = this.predictFlatSprint(profile, 60, athlete);
+                break;
+            case '50mH':
+                result = this.predictHurdles(profile, '50mH', athlete);
+                break;
+            case '60mH':
+                result = this.predictHurdles(profile, '60mH', athlete);
                 break;
             case '100m':
                 result = this.predictFlatSprint(profile, 100, athlete);
@@ -546,7 +555,8 @@ export class PredictionEngine {
      * Hurdles (PRESERVED: IE Target + Specs)
      */
     predictHurdles(profile, event, athlete) {
-        const pFlat = this.predictFlatSprint(profile, event === '110mH' ? 110 : 100, athlete);
+        const distance = parseInt(event);
+        const pFlat = this.predictFlatSprint(profile, distance, athlete);
         const tFlat = parseFloat(pFlat.time);
         const data = this.getRefData(event, athlete.gender, athlete.category);
         
