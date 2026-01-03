@@ -353,35 +353,44 @@ const toggleGroup = (index) => {
   openGroups.value[index] = !openGroups.value[index];
 };
 
-const saveAthlete = () => {
-  athlete.value.save();
-  localStorage.setItem('casion_current_athlete', athlete.value.id);
-};
-
 const hasStandards = computed(() => {
-  const gender = athlete.value.gender;
+  const gender = athlete.value.gender || 'M';
   const eventData = ATHLETICS_DATA[targetEvent.value]?.[gender];
   if (!eventData) return false;
-  // Check if at least one category has standards defined
-  return Object.values(eventData).some(cat => cat.standards);
+  return Object.values(eventData).some(cat => cat && cat.standards);
 });
 
+let analysisTimeout = null;
 const runAnalysis = () => {
+  if (analysisTimeout) clearTimeout(analysisTimeout);
   calculating.value = true;
-  setTimeout(() => {
+  
+  analysisTimeout = setTimeout(() => {
     try {
       prediction.value = engine.predict(athlete.value, targetEvent.value);
       analysis.value = engine.generateAdvice(prediction.value.profile, athlete.value.metrics, athlete.value);
+      
+      // Wait for Vue to update the DOM (v-if blocks)
       nextTick(() => {
-        renderCharts();
+        setTimeout(() => {
+          renderCharts();
+        }, 50);
       });
     } catch (e) {
       console.error(e);
       alert("Erreur lors du calcul.");
     } finally {
       calculating.value = false;
+      analysisTimeout = null;
     }
-  }, 300);
+  }, 400);
+};
+
+
+const saveAthlete = () => {
+  athlete.value.save();
+  localStorage.setItem('casion_current_athlete', athlete.value.id);
+  runAnalysis();
 };
 
 // GLOSSARY LOGIC
@@ -395,14 +404,20 @@ const getGlossaryTerm = (text) => {
 const citedGlossary = computed(() => {
     if (!prediction.value) return [];
     
-    // We get text from results to find cited terms
-    const container = document.getElementById('analysis-content');
-    const bodyText = container ? container.innerText.toLowerCase() : '';
+    // Scan all data instead of DOM to be reactive and accurate
+    const textsToScan = [
+        ...prediction.value.tags,
+        ...(prediction.value.consistency?.map(c => c.text) || []),
+        ...(prediction.value.analysisGrid?.map(row => row.label + ' ' + (row.obs || '')) || []),
+        ...(analysis.value?.strengths || []),
+        ...(analysis.value?.weaknesses || []),
+        ...(analysis.value?.advice || [])
+    ].join(' ').toLowerCase();
     
     return Object.values(GLOSSARY).filter(item => {
         const termLower = item.term.toLowerCase();
-        return bodyText.includes(termLower) || 
-               Object.keys(GLOSSARY).some(key => GLOSSARY[key] === item && bodyText.includes(key.toLowerCase()));
+        return textsToScan.includes(termLower) || 
+               Object.keys(GLOSSARY).some(key => GLOSSARY[key] === item && textsToScan.includes(key.toLowerCase()));
     }).sort((a, b) => a.term.localeCompare(b.term));
 });
 
@@ -528,5 +543,10 @@ const getBadgeClasses = (status) => {
   return 'bg-slate-100 text-slate-600';
 };
 
-onMounted(loadInitialData);
+onMounted(() => {
+  loadInitialData();
+  if (Object.keys(athlete.value.metrics).length > 0) {
+    runAnalysis();
+  }
+});
 </script>

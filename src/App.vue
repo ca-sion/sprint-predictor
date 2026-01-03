@@ -15,7 +15,7 @@
         <nav class="hidden md:flex items-center space-x-6">
           <router-link to="/" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors" active-class="text-blue-600">Accueil</router-link>
           <router-link to="/predictor" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors" active-class="text-blue-600">Predictor</router-link>
-          <span class="text-sm font-medium text-slate-300 cursor-not-allowed" title="Bientôt disponible">Analyse de Course</span>
+          <span class="text-sm font-medium text-slate-300 cursor-not-allowed" title="Bientôt disponible">Analyse de course</span>
         </nav>
 
         <div class="flex items-center space-x-3">
