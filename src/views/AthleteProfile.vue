@@ -1,23 +1,31 @@
 <template>
-  <div v-if="athlete" class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+  <div v-if="athlete" class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
     <!-- Header -->
-    <div class="flex items-center justify-between mb-8">
-      <div class="flex items-center space-x-4">
-        <button @click="router.push('/')" class="p-2 text-slate-400 hover:text-slate-600 transition-colors">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 gap-4">
+      <div class="flex items-center space-x-2 sm:space-x-4">
+        <button @click="router.push('/')" class="p-2 -ml-2 text-slate-400 hover:text-slate-600 transition-colors">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
           </svg>
         </button>
-        <h2 class="text-3xl font-extrabold text-slate-900">
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 truncate">
           Profil de <span class="text-blue-600">{{ athlete.name || 'Athlète' }}</span>
         </h2>
       </div>
-      <button @click="saveAthlete" class="inline-flex items-center px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors shadow-sm">
-        Enregistrer
-      </button>
+      <div class="flex items-center space-x-2 sm:space-x-3 w-full sm:w-auto">
+        <button @click="exportAthleteData" class="flex-1 sm:flex-none inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm sm:text-base font-bold rounded-lg transition-colors shadow-sm">
+          <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+          </svg>
+          Exporter
+        </button>
+        <button @click="saveAthlete" class="flex-1 sm:flex-none inline-flex items-center justify-center px-4 sm:px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base font-bold rounded-lg transition-colors shadow-sm">
+          Enregistrer
+        </button>
+      </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
       <!-- Left Column: Basic Info & Notes -->
       <div class="md:col-span-1 space-y-6">
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
@@ -85,15 +93,15 @@
         </div>
 
         <!-- Quick Navigation -->
-        <div class="flex space-x-4">
+        <div class="flex flex-col space-y-4">
           <button @click="goToPredictor" class="flex-1 px-4 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-all flex items-center justify-center">
-            Calculer le potentiel
+            Analyser le potentiel
             <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
             </svg>
           </button>
           <button @click="goToAnalysis" class="flex-1 px-4 py-3 bg-blue-50 text-blue-700 rounded-xl font-bold hover:bg-blue-100 transition-all flex items-center justify-center">
-            Analyse de course
+            Analyser les courses
             <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
             </svg>
@@ -111,6 +119,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Athlete } from '../models/Athlete.js';
+import { Race } from '../models/Race.js';
 import { INPUT_GROUPS } from '../data/ReferenceData.js';
 
 const route = useRoute();
@@ -153,6 +162,28 @@ const goToAnalysis = () => {
     localStorage.setItem('sprint_predictor_current_athlete', athlete.value.id);
     router.push({ path: '/races-analysis', query: { athleteId: athlete.value.id } });
   }
+};
+
+const exportAthleteData = () => {
+  if (!athlete.value) return;
+  
+  const athleteRaces = Race.getByAthlete(athlete.value.id);
+  const exportData = {
+    type: 'sprint_predictor_export',
+    version: 1,
+    scope: 'athlete',
+    athlete: athlete.value,
+    races: athleteRaces
+  };
+
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const fileName = `athlete-${athlete.value.name.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.json`;
+  a.href = url;
+  a.download = fileName;
+  a.click();
+  URL.revokeObjectURL(url);
 };
 
 onMounted(loadAthlete);

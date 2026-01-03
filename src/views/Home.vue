@@ -106,6 +106,8 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { Athlete } from '../models/Athlete.js';
+import { Race } from '../models/Race.js';
+import { StorageManager } from '../models/StorageManager.js';
 
 const router = useRouter();
 const athletes = ref({});
@@ -146,9 +148,7 @@ const analyzeAthlete = (id) => {
 
 const deleteAthlete = (id) => {
   if (confirm("Supprimer cet athlète ? Cette action est irréversible.")) {
-    const all = Athlete.getAll();
-    delete all[id];
-    localStorage.setItem('sprint_predictor_athletes', JSON.stringify(all));
+    Athlete.delete(id);
     if (localStorage.getItem('sprint_predictor_current_athlete') === id) {
       localStorage.removeItem('sprint_predictor_current_athlete');
     }
@@ -157,12 +157,20 @@ const deleteAthlete = (id) => {
 };
 
 const exportData = () => {
-  const data = localStorage.getItem('sprint_predictor_athletes') || '{}';
-  const blob = new Blob([data], { type: 'application/json' });
+  const db = StorageManager.getDB();
+  
+  const exportBundle = {
+    type: 'sprint_predictor_export',
+    version: db.version || 1,
+    scope: 'all',
+    db: db
+  };
+
+  const blob = new Blob([JSON.stringify(exportBundle, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `sprint-predictor-export-${new Date().toISOString().split('T')[0]}.json`;
+  a.download = `sprint-predictor-full-export-${new Date().toISOString().split('T')[0]}.json`;
   a.click();
   URL.revokeObjectURL(url);
 };
@@ -175,13 +183,42 @@ const importData = (event) => {
   reader.onload = (e) => {
     try {
       const data = JSON.parse(e.target.result);
-      const current = Athlete.getAll();
-      const merged = { ...current, ...data };
-      localStorage.setItem('sprint_predictor_athletes', JSON.stringify(merged));
+      const db = StorageManager.getDB();
+      
+      if (data.type !== 'sprint_predictor_export') {
+        throw new Error("Format de fichier non reconnu");
+      }
+
+      // 1. Cas Export COMPLET
+      if (data.scope === 'all' && data.db) {
+        // Fusion des athlètes
+        db.athletes = { ...db.athletes, ...data.db.athletes };
+        
+        // Fusion des courses (robuste: gère tableau ou objet)
+        const racesToImport = data.db.races || {};
+        if (Array.isArray(racesToImport)) {
+          racesToImport.forEach(r => { if(r.id) db.races[r.id] = r; });
+        } else {
+          db.races = { ...db.races, ...racesToImport };
+        }
+      } 
+      // 2. Cas Export PARTIEL (un seul athlète + ses courses)
+      else if (data.scope === 'athlete' && data.athlete) {
+        db.athletes[data.athlete.id] = data.athlete;
+        if (Array.isArray(data.races)) {
+          data.races.forEach(r => { if(r.id) db.races[r.id] = r; });
+        }
+      } else {
+        throw new Error("Contenu de l'export invalide ou non supporté");
+      }
+
+      StorageManager.saveDB(db);
       loadAthletes();
       alert("Importation réussie !");
+      event.target.value = '';
     } catch (err) {
-      alert("Erreur lors de l'importation. Fichier JSON invalide.");
+      console.error(err);
+      alert("Erreur lors de l'importation : " + err.message);
     }
   };
   reader.readAsText(file);

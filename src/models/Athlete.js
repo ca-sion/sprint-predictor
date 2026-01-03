@@ -1,7 +1,8 @@
 /**
  * Athlete Model
- * Handles data structure, storage, and retrieval.
+ * Handles data structure, storage, and retrieval via StorageManager.
  */
+import { StorageManager } from './StorageManager.js';
 
 export class Athlete {
     constructor(data = {}) {
@@ -53,11 +54,11 @@ export class Athlete {
     }
 
     /**
-     * Save to LocalStorage
+     * Save to LocalStorage via StorageManager
      */
     save() {
-        const athletes = JSON.parse(localStorage.getItem('sprint_predictor_athletes') || '{}');
-        athletes[this.id] = {
+        this.lastUpdated = new Date().toISOString();
+        StorageManager.saveAthlete({
             id: this.id,
             name: this.name,
             birthYear: this.birthYear,
@@ -65,9 +66,7 @@ export class Athlete {
             metrics: this.metrics,
             notes: this.notes,
             lastUpdated: this.lastUpdated
-        };
-        localStorage.setItem('sprint_predictor_athletes', JSON.stringify(athletes));
-        window.dispatchEvent(new CustomEvent('athlete-updated'));
+        });
     }
 
     /**
@@ -75,7 +74,7 @@ export class Athlete {
      * @param {string} id 
      */
     static load(id) {
-        const athletes = JSON.parse(localStorage.getItem('sprint_predictor_athletes') || '{}');
+        const athletes = StorageManager.getAthletes();
         if (athletes[id]) {
             return new Athlete(athletes[id]);
         }
@@ -83,6 +82,10 @@ export class Athlete {
     }
 
     static getAll() {
-        return JSON.parse(localStorage.getItem('sprint_predictor_athletes') || '{}');
+        return StorageManager.getAthletes();
+    }
+
+    static delete(id) {
+        StorageManager.deleteAthlete(id);
     }
 }

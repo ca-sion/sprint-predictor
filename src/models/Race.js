@@ -2,6 +2,7 @@
  * Race Model
  * Handles individual race analysis data, milestones, and metrics.
  */
+import { StorageManager } from './StorageManager.js';
 
 export class Race {
     constructor(data = {}) {
@@ -212,13 +213,11 @@ export class Race {
     }
 
     /**
-     * Save to LocalStorage
+     * Save to LocalStorage via StorageManager
      */
     save() {
-        const races = JSON.parse(localStorage.getItem('sprint_predictor_races') || '[]');
-        const index = races.findIndex(r => r.id === this.id);
-        
-        const raceData = {
+        this.lastUpdated = new Date().toISOString();
+        StorageManager.saveRace({
             id: this.id,
             athleteId: this.athleteId,
             discipline: this.discipline,
@@ -230,32 +229,22 @@ export class Race {
             steps: this.steps,
             videoUrl: this.videoUrl,
             lastUpdated: this.lastUpdated
-        };
-
-        if (index !== -1) {
-            races[index] = raceData;
-        } else {
-            races.push(raceData);
-        }
-        
-        localStorage.setItem('sprint_predictor_races', JSON.stringify(races));
+        });
     }
 
     /**
-     * Delete from LocalStorage
+     * Delete from LocalStorage via StorageManager
      */
     delete() {
-        let races = JSON.parse(localStorage.getItem('sprint_predictor_races') || '[]');
-        races = races.filter(r => r.id !== this.id);
-        localStorage.setItem('sprint_predictor_races', JSON.stringify(races));
+        StorageManager.deleteRace(this.id);
     }
 
     /**
      * Load all races for an athlete
      */
     static getByAthlete(athleteId) {
-        const races = JSON.parse(localStorage.getItem('sprint_predictor_races') || '[]');
-        return races
+        const racesMap = StorageManager.getRaces();
+        return Object.values(racesMap)
             .filter(r => r.athleteId === athleteId)
             .map(r => new Race(r))
             .sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -265,8 +254,8 @@ export class Race {
      * Load a single race
      */
     static load(id) {
-        const races = JSON.parse(localStorage.getItem('sprint_predictor_races') || '[]');
-        const data = races.find(r => r.id === id);
+        const racesMap = StorageManager.getRaces();
+        const data = racesMap[id];
         return data ? new Race(data) : null;
     }
 }

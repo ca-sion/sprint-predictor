@@ -341,6 +341,9 @@ const loadInitialData = () => {
     try {
       const data = JSON.parse(atob(sharedData));
       athlete.value = new Athlete(data);
+      // Save shared athlete to storage so it appears in the list
+      athlete.value.save();
+      localStorage.setItem('sprint_predictor_current_athlete', athlete.value.id);
       return;
     } catch (e) { console.error("Error decoding shared data", e); }
   }
