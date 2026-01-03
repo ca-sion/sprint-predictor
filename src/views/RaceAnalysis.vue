@@ -597,9 +597,22 @@ const formatDate = (dateStr) => {
 
 // Key Listeners
 const handleKeyDown = (e) => {
-  if (e.code === 'Space' && isRecording.value) {
+  // On ignore si l'utilisateur est en train d'écrire dans un champ
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+  if (e.key === ' ' || e.code === 'Space') {
+    // Empêcher le scroll par défaut de la barre d'espace
     e.preventDefault();
-    captureTime();
+    
+    // Eviter les déclenchements multiples si la touche est maintenue
+    if (e.repeat) return;
+
+    if (isRecording.value) {
+      captureTime();
+    } else if (activeRace.value && !showNewRaceModal.value) {
+      // Permettre aussi de démarrer avec Espace pour plus de confort
+      startRecording();
+    }
   }
 };
 
