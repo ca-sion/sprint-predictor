@@ -12,7 +12,7 @@
         
         <nav class="hidden md:flex items-center space-x-6">
           <router-link to="/" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors" active-class="text-blue-600">Accueil</router-link>
-          <router-link to="/predictor" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors" active-class="text-blue-600">Analyse</router-link>
+          <router-link to="/analysis" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors" active-class="text-blue-600">Analyse</router-link>
           <router-link to="/races-analysis" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors" active-class="text-blue-600">Courses</router-link>
         </nav>
 

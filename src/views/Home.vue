@@ -14,7 +14,7 @@
       <div class="lg:col-span-2 space-y-6">
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
           <div class="p-6 border-b border-slate-100 flex items-center justify-between">
-            <h3 class="text-lg font-bold text-slate-900">Vos Athlètes</h3>
+            <h3 class="text-lg font-bold text-slate-900">Vos athlètes</h3>
             <button @click="createNewAthlete" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm">
               <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
@@ -51,10 +51,10 @@
                   Profil
                 </button>
                 <button @click="selectAthlete(id)" class="px-3 py-1.5 bg-slate-100 hover:bg-blue-600 hover:text-white text-slate-700 text-xs font-bold rounded transition-all">
-                  Charger
+                  Analyse
                 </button>
                 <button @click="analyzeAthlete(id)" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 text-xs font-bold rounded transition-all">
-                  Analyse
+                  Courses
                 </button>
                 <button @click="deleteAthlete(id)" class="p-2 text-slate-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -136,7 +136,7 @@ const viewProfile = (id) => {
 
 const selectAthlete = (id) => {
   localStorage.setItem('sprint_predictor_current_athlete', id);
-  router.push('/predictor');
+  router.push('/analysis');
 };
 
 const analyzeAthlete = (id) => {
@@ -189,7 +189,7 @@ const importData = (event) => {
 
 const shareAthlete = (athlete) => {
   const data = btoa(JSON.stringify(athlete));
-  const url = `${window.location.origin}${window.location.pathname}#/predictor?share=${data}`;
+  const url = `${window.location.origin}${window.location.pathname}#/analysis?share=${data}`;
   navigator.clipboard.writeText(url).then(() => {
     alert("Lien de partage copié dans le presse-papier !");
   });

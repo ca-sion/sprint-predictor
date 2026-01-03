@@ -143,7 +143,7 @@ const goToPredictor = () => {
   if (athlete.value) {
     athlete.value.save();
     localStorage.setItem('sprint_predictor_current_athlete', athlete.value.id);
-    router.push('/predictor');
+    router.push('/analysis');
   }
 };
 
