@@ -20,7 +20,7 @@
           <div v-if="currentAthlete" class="hidden sm:flex items-center px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-bold border border-blue-100 mr-2">
             {{ currentAthlete.name }}
           </div>
-          <router-link to="/predictor" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm">
+          <router-link v-if="currentAthlete" :to="`/athlete/${currentAthlete.id}`" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm">
             Profile & PB
           </router-link>
         </div>

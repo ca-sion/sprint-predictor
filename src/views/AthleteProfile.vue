@@ -1,0 +1,159 @@
+<template>
+  <div v-if="athlete" class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
+      <div class="flex items-center space-x-4">
+        <button @click="router.push('/')" class="p-2 text-slate-400 hover:text-slate-600 transition-colors">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+          </svg>
+        </button>
+        <h2 class="text-3xl font-extrabold text-slate-900">
+          Profil de <span class="text-blue-600">{{ athlete.name || 'Athlète' }}</span>
+        </h2>
+      </div>
+      <button @click="saveAthlete" class="inline-flex items-center px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors shadow-sm">
+        Enregistrer
+      </button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <!-- Left Column: Basic Info & Notes -->
+      <div class="md:col-span-1 space-y-6">
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+          <h3 class="text-lg font-bold text-slate-900 mb-4 border-b pb-2">Informations de base</h3>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Nom complet</label>
+              <input v-model="athlete.name" type="text" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Année de naissance</label>
+              <input v-model.number="athlete.birthYear" type="number" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Sexe</label>
+              <select v-model="athlete.gender" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                <option value="M">Homme</option>
+                <option value="F">Femme</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+          <h3 class="text-lg font-bold text-slate-900 mb-4 border-b pb-2">Notes & observations</h3>
+          <textarea 
+            v-model="athlete.notes" 
+            rows="8" 
+            placeholder="Points forts, axes d'amélioration, blessures..." 
+            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm"
+          ></textarea>
+        </div>
+      </div>
+
+      <!-- Right Column: PBs -->
+      <div class="md:col-span-2 space-y-6">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="p-6 border-b border-slate-100 bg-slate-50/50">
+            <h3 class="text-lg font-bold text-slate-900">Records <param name="" value="">ersonnels (PB)</h3>
+            <p class="text-sm text-slate-500">Mettez à jour les meilleures performances de l'athlète.</p>
+          </div>
+          
+          <div class="p-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div v-for="field in pbFields" :key="field.id" class="relative">
+                <label :for="field.id" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                  {{ field.label }}
+                </label>
+                <div class="relative">
+                  <input 
+                    :id="field.id"
+                    type="number" 
+                    :step="field.step" 
+                    :placeholder="field.placeholder"
+                    v-model.number="athlete.metrics[field.id]"
+                    class="w-full pl-3 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-mono font-bold text-slate-700"
+                  >
+                  <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400 text-sm font-bold">
+                    {{ field.unit }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Navigation -->
+        <div class="flex space-x-4">
+          <button @click="goToPredictor" class="flex-1 px-4 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-all flex items-center justify-center">
+            Calculer le potentiel
+            <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+            </svg>
+          </button>
+          <button @click="goToAnalysis" class="flex-1 px-4 py-3 bg-blue-50 text-blue-700 rounded-xl font-bold hover:bg-blue-100 transition-all flex items-center justify-center">
+            Analyse de course
+            <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div v-else class="flex items-center justify-center h-screen">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted, computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { Athlete } from '../models/Athlete.js';
+import { INPUT_GROUPS } from '../data/ReferenceData.js';
+
+const route = useRoute();
+const router = useRouter();
+const athlete = ref(null);
+
+const pbFields = computed(() => {
+  const pbGroup = INPUT_GROUPS.find(g => g.id === 'pbs');
+  return pbGroup ? pbGroup.fields : [];
+});
+
+const loadAthlete = () => {
+  const id = route.params.id;
+  const loaded = Athlete.load(id);
+  if (loaded) {
+    athlete.value = loaded;
+  } else {
+    router.push('/');
+  }
+};
+
+const saveAthlete = () => {
+  if (athlete.value) {
+    athlete.value.save();
+    alert("Profil enregistré avec succès !");
+  }
+};
+
+const goToPredictor = () => {
+  if (athlete.value) {
+    athlete.value.save();
+    localStorage.setItem('sprint_predictor_current_athlete', athlete.value.id);
+    router.push('/predictor');
+  }
+};
+
+const goToAnalysis = () => {
+  if (athlete.value) {
+    athlete.value.save();
+    localStorage.setItem('sprint_predictor_current_athlete', athlete.value.id);
+    router.push({ path: '/races-analysis', query: { athleteId: athlete.value.id } });
+  }
+};
+
+onMounted(loadAthlete);
+</script>

@@ -10,6 +10,7 @@ export class Athlete {
         this.birthYear = data.birthYear || new Date().getFullYear() - 20; // Default approx 20yo
         this.gender = data.gender || 'M';
         this.metrics = data.metrics || {}; // Stores all input values
+        this.notes = data.notes || '';
         this.lastUpdated = data.lastUpdated || new Date().toISOString();
     }
 
@@ -62,6 +63,7 @@ export class Athlete {
             birthYear: this.birthYear,
             gender: this.gender,
             metrics: this.metrics,
+            notes: this.notes,
             lastUpdated: this.lastUpdated
         };
         localStorage.setItem('sprint_predictor_athletes', JSON.stringify(athletes));
