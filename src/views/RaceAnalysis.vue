@@ -84,12 +84,96 @@
             <!-- Capture Mode -->
             <div class="bg-slate-900 rounded-xl p-6 text-white mb-8">
               <div class="flex items-center justify-between mb-6">
-                <div class="flex items-center gap-2">
-                  <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse" v-if="isRecording"></div>
-                  <h4 class="text-sm font-bold uppercase tracking-widest">{{ isRecording ? 'Enregistrement en cours' : 'Outil de capture' }}</h4>
+                <div class="flex items-center gap-4">
+                  <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse" v-if="isRecording"></div>
+                    <h4 class="text-sm font-bold uppercase tracking-widest">{{ videoUrl ? 'Analyse Vidéo' : (isRecording ? 'Enregistrement' : 'Capture') }}</h4>
+                  </div>
+                  <label class="cursor-pointer bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-colors border border-slate-700">
+                    <input type="file" accept="video/*" class="hidden" @change="handleVideoUpload">
+                    {{ videoUrl ? 'Changer Vidéo' : 'Charger Vidéo' }}
+                  </label>
+                  <button v-if="videoUrl" @click="videoUrl = null" class="text-[10px] font-bold text-slate-500 hover:text-red-400">Retirer</button>
                 </div>
                 <div class="text-3xl font-mono tabular-nums text-blue-400">
-                  {{ formatTime(currentTime) }}
+                  {{ formatTime(videoUrl ? videoCurrentTime : currentTime) }} <span v-if="videoUrl" class="text-sm text-slate-600">/ {{ formatTime(videoDuration) }}</span>
+                </div>
+              </div>
+
+              <!-- Video Player Area -->
+              <div v-if="videoUrl" class="mb-6 space-y-4">
+                <div class="aspect-video bg-black rounded-xl overflow-hidden relative group border border-slate-800">
+                  <video 
+                    ref="videoRef" 
+                    :src="videoUrl" 
+                    class="w-full h-full"
+                    @timeupdate="onVideoTimeUpdate"
+                    @loadedmetadata="onVideoLoaded"
+                    @click="togglePlay"
+                  ></video>
+                  
+                  <!-- Play Overlay -->
+                  <div v-if="videoPaused" @click="togglePlay" class="absolute inset-0 flex items-center justify-center bg-black/20 cursor-pointer group-hover:bg-black/40 transition-all">
+                    <div class="w-16 h-16 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20">
+                      <svg class="w-8 h-8 text-white translate-x-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    </div>
+                  </div>
+
+                  <!-- Interactive Seeker -->
+                  <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                    <input 
+                      type="range" 
+                      min="0" 
+                      :max="videoDuration" 
+                      step="0.001"
+                      v-model.number="videoCurrentTime"
+                      @input="seekVideo"
+                      class="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                    >
+                  </div>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-between gap-4 bg-slate-800/50 p-3 rounded-xl border border-white/5">
+                  <div class="flex items-center gap-3">
+                    <button @click="togglePlay" class="p-2 hover:bg-white/10 rounded-lg transition-colors">
+                      <svg v-if="videoPaused" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                      <svg v-else class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                    </button>
+                    <div class="h-4 w-px bg-slate-700"></div>
+                    <div class="flex gap-1">
+                      <button @click="stepFrame(-1)" class="p-2 hover:bg-white/10 rounded-lg text-xs font-bold text-slate-400" title="Reculer 1s (Shift+Gauche)">
+                        -1s
+                      </button>
+                      <button @click="stepFrame(-0.01)" class="p-2 hover:bg-white/10 rounded-lg text-xs font-bold" title="Reculer 1 frame (Gauche)">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                      </button>
+                      <button @click="stepFrame(0.01)" class="p-2 hover:bg-white/10 rounded-lg text-xs font-bold" title="Avancer 1 frame (Droite)">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                      </button>
+                      <button @click="stepFrame(1)" class="p-2 hover:bg-white/10 rounded-lg text-xs font-bold text-slate-400" title="Avancer 1s (Shift+Droite)">
+                        +1s
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-2">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase mr-1">Vitesse :</span>
+                    <button 
+                      v-for="rate in [0.25, 0.5, 1]" 
+                      :key="rate" 
+                      @click="videoPlaybackRate = rate"
+                      :class="['px-2 py-1 rounded text-[10px] font-bold transition-colors', videoPlaybackRate === rate ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-400 hover:text-white']"
+                    >
+                      {{ rate }}x
+                    </button>
+                  </div>
+                  
+                  <button 
+                    @click="setAsStart(videoCurrentTime)" 
+                    class="px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white rounded-lg text-[10px] font-bold transition-all border border-blue-600/30"
+                  >
+                    Set as Start (0m)
+                  </button>
                 </div>
               </div>
 
@@ -101,31 +185,43 @@
                   </div>
                 </div>
                 <div class="flex items-end justify-end gap-3">
-                  <button 
-                    v-if="!isRecording" 
-                    @click="startRecording" 
-                    class="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-900/20"
-                  >
-                    Démarrer (Start)
-                  </button>
-                  <button 
-                    v-else 
-                    @click="captureTime" 
-                    class="px-8 py-4 bg-white text-slate-900 text-lg font-black rounded-2xl transition-all active:scale-95 shadow-lg shadow-white/10 flex-1 md:flex-none"
-                  >
-                    CAPTURER
-                  </button>
-                  <button 
-                    v-if="isRecording" 
-                    @click="stopRecording" 
-                    class="p-4 bg-slate-800 hover:bg-red-900/40 text-slate-400 hover:text-red-400 rounded-xl transition-all"
-                  >
-                    Stop
-                  </button>
+                  <template v-if="!videoUrl">
+                    <button 
+                      v-if="!isRecording" 
+                      @click="startRecording" 
+                      class="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-900/20"
+                    >
+                      Démarrer (Start)
+                    </button>
+                    <button 
+                      v-else 
+                      @click="captureTime" 
+                      class="px-8 py-4 bg-white text-slate-900 text-lg font-black rounded-2xl transition-all active:scale-95 shadow-lg shadow-white/10 flex-1 md:flex-none"
+                    >
+                      CAPTURER
+                    </button>
+                    <button 
+                      v-if="isRecording" 
+                      @click="stopRecording" 
+                      class="p-4 bg-slate-800 hover:bg-red-900/40 text-slate-400 hover:text-red-400 rounded-xl transition-all"
+                    >
+                      Stop
+                    </button>
+                  </template>
+                  <template v-else>
+                    <button 
+                      @click="captureTime" 
+                      :disabled="!nextMilestone"
+                      class="px-8 py-4 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-600 text-white text-lg font-black rounded-2xl transition-all active:scale-95 shadow-lg shadow-blue-600/20 flex-1"
+                    >
+                      CAPTURER LA FRAME
+                    </button>
+                  </template>
                 </div>
               </div>
-              <div class="mt-4 text-[10px] text-slate-500">
-                Astuce : Appuyez sur la barre d'espace pour capturer le temps.
+              <div class="mt-4 text-[10px] text-slate-500 flex justify-between">
+                <span>Astuce : Appuyez sur la barre d'espace pour capturer le temps. {{ videoUrl ? 'Flèches = Pas à pas. L = Play/Pause.' : '' }}</span>
+                <span v-if="videoUrl" class="text-blue-500">Mode Analyse Vidéo Actif</span>
               </div>
             </div>
 
@@ -419,6 +515,15 @@ const startTime = ref(0);
 const currentTime = ref(0);
 const timerInterval = ref(null);
 
+// Video Analysis State
+const videoRef = ref(null);
+const videoUrl = ref(null);
+const videoPaused = ref(true);
+const videoCurrentTime = ref(0);
+const videoDuration = ref(0);
+const videoProgress = ref(0);
+const videoPlaybackRate = ref(1);
+
 const nextMilestone = computed(() => {
   if (!activeRace.value) return null;
   const config = getDynamicDisciplineConfig(
@@ -498,6 +603,7 @@ const loadData = () => {
 const selectRace = (race) => {
   activeRace.value = race;
   stopRecording();
+  videoUrl.value = null; // Reset video on race change
 };
 
 const saveActiveRace = () => {
@@ -551,6 +657,59 @@ const addManualMilestone = () => {
   });
 };
 
+// Video Logic
+const handleVideoUpload = (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    videoUrl.value = URL.createObjectURL(file);
+    videoPaused.value = true;
+  }
+};
+
+const onVideoLoaded = () => {
+  if (videoRef.value) {
+    videoRef.value.playbackRate = videoPlaybackRate.value;
+    videoDuration.value = videoRef.value.duration;
+  }
+};
+
+const onVideoTimeUpdate = () => {
+  if (videoRef.value) {
+    videoCurrentTime.value = videoRef.value.currentTime;
+    videoProgress.value = (videoRef.value.currentTime / videoRef.value.duration) * 100;
+  }
+};
+
+const seekVideo = () => {
+  if (videoRef.value) {
+    videoRef.value.currentTime = videoCurrentTime.value;
+  }
+};
+
+const togglePlay = () => {
+  if (!videoRef.value) return;
+  if (videoRef.value.paused) {
+    videoRef.value.play();
+    videoPaused.value = false;
+  } else {
+    videoRef.value.pause();
+    videoPaused.value = true;
+  }
+};
+
+const stepFrame = (seconds) => {
+  if (!videoRef.value) return;
+  videoRef.value.pause();
+  videoPaused.value = true;
+  videoRef.value.currentTime += seconds;
+};
+
+watch(videoPlaybackRate, (newRate) => {
+  if (videoRef.value) {
+    videoRef.value.playbackRate = newRate;
+  }
+});
+
 // Capture Logic
 const startRecording = () => {
   isRecording.value = true;
@@ -570,24 +729,28 @@ const stopRecording = () => {
 };
 
 const captureTime = () => {
-  if (!isRecording.value || !activeRace.value || !nextMilestone.value) return;
+  const timeToCapture = videoUrl.value ? videoCurrentTime.value : currentTime.value;
+  
+  if (!activeRace.value || !nextMilestone.value) return;
+  if (!videoUrl.value && !isRecording.value) return;
   
   const m = nextMilestone.value;
   activeRace.value.milestones.push({
     label: m.label,
     type: m.type,
     distance: m.distance,
-    time: parseFloat(currentTime.value.toFixed(3))
+    time: parseFloat(timeToCapture.toFixed(3))
   });
   
   saveActiveRace();
   
-  if (!nextMilestone.value) {
+  if (!nextMilestone.value && !videoUrl.value) {
     stopRecording();
   }
 };
 
 const formatTime = (seconds) => {
+  if (isNaN(seconds)) return '0.00s';
   return seconds.toFixed(2) + 's';
 };
 
@@ -607,11 +770,31 @@ const handleKeyDown = (e) => {
     // Eviter les déclenchements multiples si la touche est maintenue
     if (e.repeat) return;
 
-    if (isRecording.value) {
+    if (videoUrl.value) {
+      captureTime();
+    } else if (isRecording.value) {
       captureTime();
     } else if (activeRace.value && !showNewRaceModal.value) {
       // Permettre aussi de démarrer avec Espace pour plus de confort
       startRecording();
+    }
+  }
+
+  // Keyboard Video Controls
+  if (videoUrl.value) {
+    const jumpSize = e.shiftKey ? 1 : 0.01;
+    
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      stepFrame(jumpSize);
+    }
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      stepFrame(-jumpSize);
+    }
+    if (e.key.toLowerCase() === 'l') {
+      e.preventDefault();
+      togglePlay();
     }
   }
 };
