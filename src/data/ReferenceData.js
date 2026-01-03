@@ -330,7 +330,98 @@ export const CONTACT_TIME_TARGETS = {
   ],
 };
 
-// Backward Compatibility Exports (Aliases pointing to the new tree)
+// --- 5. DISCIPLINES CONFIG (Milestones for Capture) ---
+export const DISCIPLINES_CONFIG = {
+    '100m': [
+        { label: 'Départ (0m)', type: 'split', distance: 0 },
+        { label: '30m', type: 'split', distance: 30 },
+        { label: '50m', type: 'split', distance: 50 },
+        { label: '60m', type: 'split', distance: 60 },
+        { label: 'Arrivée (100m)', type: 'split', distance: 100 },
+    ],
+    '110mH': [
+        { label: 'Départ (0m)', type: 'split', distance: 0 },
+        ...Array.from({ length: 10 }, (_, i) => (
+            [
+                { label: `H${i + 1} Take-off`, type: 'takeoff', distance: 13.72 + i * 9.14 - 2 },
+                { label: `H${i + 1} Touchdown`, type: 'touchdown', distance: 13.72 + i * 9.14 }
+            ]
+        )).flat(),
+        { label: 'Arrivée (110m)', type: 'split', distance: 110 },
+    ],
+    '100mH': [
+        { label: 'Départ (0m)', type: 'split', distance: 0 },
+        ...Array.from({ length: 10 }, (_, i) => (
+            [
+                { label: `H${i + 1} Take-off`, type: 'takeoff', distance: 13.0 + i * 8.5 - 2 },
+                { label: `H${i + 1} Touchdown`, type: 'touchdown', distance: 13.0 + i * 8.5 }
+            ]
+        )).flat(),
+        { label: 'Arrivée (100m)', type: 'split', distance: 100 },
+    ],
+    '200m': [
+        { label: 'Départ (0m)', type: 'split', distance: 0 },
+        { label: '30m', type: 'split', distance: 30 },
+        { label: '100m', type: 'split', distance: 100 },
+        { label: 'Arrivée (200m)', type: 'split', distance: 200 },
+    ],
+    '400m': [
+        { label: 'Départ (0m)', type: 'split', distance: 0 },
+        { label: '100m', type: 'split', distance: 100 },
+        { label: '200m', type: 'split', distance: 200 },
+        { label: '300m', type: 'split', distance: 300 },
+        { label: 'Arrivée (400m)', type: 'split', distance: 400 },
+    ],
+    '400mH': [
+        { label: 'Départ (0m)', type: 'split', distance: 0 },
+        ...Array.from({ length: 10 }, (_, i) => (
+            [
+                { label: `H${i + 1} Touchdown`, type: 'touchdown', distance: 45.0 + i * 35.0 }
+            ]
+        )).flat(),
+        { label: 'Arrivée (400m)', type: 'split', distance: 400 },
+    ]
+};
+
+// --- 6. ANALYSIS TEMPLATES (Custom Intervals) ---
+export const ANALYSIS_TEMPLATES = {
+    '100m': [
+        { label: 'Départ', start: 0, end: 30, type: 'accel' },
+        { label: 'Transition / Vmax', start: 30, end: 60, type: 'vmax' },
+        { label: 'Maintien de vitesse', start: 60, end: 100, type: 'speed_maint' },
+        { label: '60m', start: 0, end: 60, type: 'total' },
+        { label: 'Fly', start: 50, end: 100, type: 'endurance' },
+        { label: '100m', start: 0, end: 100, type: 'total' }
+    ],
+    '200m': [
+        { label: 'Virage', start: 0, end: 100, type: 'total' },
+        { label: 'Ligne Droite', start: 100, end: 200, type: 'total' },
+        { label: '200m', start: 0, end: 200, type: 'total' }
+    ],
+    '400m': [
+        { label: '1er 200m', start: 0, end: 200, type: 'total' },
+        { label: '2nd 200m', start: 200, end: 400, type: 'total' },
+        { label: 'Différentiel (2-1)', isDiff: true, startRef: 0, endRef: 200, startComp: 200, endComp: 400 },
+        { label: 'Performance Totale', start: 0, end: 400, type: 'total' }
+    ],
+    '110mH': [
+        { label: 'Mise en action (H1)', start: 0, end: 13.72, type: 'accel' },
+        { label: 'Inter-haies (H1-H10)', start: 13.72, end: 96.0, type: 'rhythm' },
+        { label: 'Final (H10-Arrivée)', start: 96.0, end: 110, type: 'finish' }
+    ],
+    '100mH': [
+        { label: 'Mise en action (H1)', start: 0, end: 13.0, type: 'accel' },
+        { label: 'Inter-haies (H1-H10)', start: 13.0, end: 89.5, type: 'rhythm' },
+        { label: 'Final (H10-Arrivée)', start: 89.5, end: 100, type: 'finish' }
+    ],
+    '400mH': [
+        { label: 'H1', start: 0, end: 45.0, type: 'accel' },
+        { label: 'H1-H10', start: 45.0, end: 360.0, type: 'rhythm' },
+        { label: 'Final', start: 360.0, end: 400, type: 'finish' }
+    ]
+};
+
+// Backward Compatibility Exports
 export const STANDARDS = {}; // Will be handled dynamically in engine to avoid redundancy
 export const PERFORMANCE_DATA = {};
 export const SPLIT_MODELS = {};
