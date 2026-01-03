@@ -488,7 +488,7 @@ export const ANALYSIS_TEMPLATES = {
     { label: "Transition / Vmax", start: 30, end: 60, type: "vmax" },
     { label: "Maintien de vitesse", start: 60, end: 100, type: "speed_maint" },
     { label: "60m", start: 0, end: 60, type: "total" },
-    { label: "Fly", start: 50, end: 100, type: "endurance" },
+    { label: "Endurance (50-100)", start: 50, end: 100, type: "endurance" },
     { label: "100m", start: 0, end: 100, type: "total" },
   ],
   "200m": [
