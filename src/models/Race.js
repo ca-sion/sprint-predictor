@@ -62,7 +62,10 @@ export class Race {
      */
     get segmentSpeeds() {
         const results = [];
-        const sortedMilestones = [...this.milestones].filter(m => m.type === 'split').sort((a, b) => a.distance - b.distance);
+        // Filter for both standard splits AND hurdle touchdowns to have a complete view
+        const sortedMilestones = [...this.milestones]
+            .filter(m => m.type === 'split' || m.type === 'touchdown')
+            .sort((a, b) => a.distance - b.distance);
         
         // Add 0m if not present
         const points = sortedMilestones[0]?.distance > 0 
@@ -79,6 +82,7 @@ export class Race {
                 results.push({
                     id: segmentId,
                     segment: `${points[i-1].distance}-${points[i].distance}m`,
+                    label: points[i].label,
                     speed: d / t, // m/s
                     time: t,
                     distance: d,
@@ -88,6 +92,74 @@ export class Race {
                 });
             }
         }
+        return results;
+    }
+
+    /**
+     * Specialized analysis for hurdle races
+     */
+    get hurdleAnalysis() {
+        const results = [];
+        const isHurdle = this.discipline.toLowerCase().includes('h');
+        if (!isHurdle) return [];
+
+        const touchdowns = this.milestones.filter(m => m.type === 'touchdown').sort((a, b) => a.distance - b.distance);
+        const start = this.milestones.find(m => m.distance === 0) || { distance: 0, time: 0 };
+        const finish = this.milestones.find(m => m.distance === (this.discipline === '110mH' ? 110 : (this.discipline === '400mH' ? 400 : 100)));
+
+        // 1. Start to H1
+        if (touchdowns.length > 0) {
+            const h1 = touchdowns[0];
+            const t = h1.time - start.time;
+            const d = h1.distance - start.distance;
+            results.push({
+                label: 'Start - H1',
+                time: t,
+                distance: d,
+                distance_start: 0,
+                distance_end: h1.distance,
+                speed: d / t,
+                steps: this.stepCounts[`0-${h1.distance}`] || 0
+            });
+        }
+
+        // 2. Inter-hurdles
+        for (let i = 1; i < touchdowns.length; i++) {
+            const m1 = touchdowns[i-1];
+            const m2 = touchdowns[i];
+            const t = m2.time - m1.time;
+            const d = m2.distance - m1.distance;
+            const segmentId = `${m1.distance}-${m2.distance}`;
+            
+            results.push({
+                label: `H${i} - H${i+1}`,
+                time: t,
+                distance: d,
+                distance_start: m1.distance,
+                distance_end: m2.distance,
+                speed: d / t,
+                steps: this.stepCounts[segmentId] || 0
+            });
+        }
+
+        // 3. Last H to Finish
+        if (touchdowns.length > 0 && finish) {
+            const lastH = touchdowns[touchdowns.length - 1];
+            if (finish.distance > lastH.distance) {
+                const t = finish.time - lastH.time;
+                const d = finish.distance - lastH.distance;
+                results.push({
+                    label: `H${touchdowns.length} - Finish`,
+                    time: t,
+                    distance: d,
+                    distance_start: lastH.distance,
+                    distance_end: finish.distance,
+                    speed: d / t,
+                    steps: this.stepCounts[`${lastH.distance}-${finish.distance}`] || 0
+                });
+            }
+        }
+
         return results;
     }
 

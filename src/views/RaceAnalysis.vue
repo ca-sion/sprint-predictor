@@ -241,6 +241,58 @@
                 </div>
               </div>
 
+              <!-- Hurdle Specific Analysis -->
+              <div v-if="hurdleAnalysis.length > 0" class="mb-12">
+                <h4 class="text-sm font-bold text-slate-900 uppercase tracking-widest mb-4 flex items-center">
+                  <span class="mr-2">🚧</span> Analyse spécifique Haies (Inter-haies)
+                </h4>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <!-- Hurdle Steps Input -->
+                  <div class="bg-slate-900 rounded-2xl p-6 text-white shadow-xl">
+                    <h5 class="text-[10px] font-bold text-blue-400 uppercase mb-4 tracking-widest">Nombre de pas entre les haies</h5>
+                    <div class="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                      <div v-for="seg in hurdleAnalysis" :key="'hurdle-step-' + seg.label" class="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-colors">
+                        <span class="text-xs font-bold">{{ seg.label }}</span>
+                        <div class="flex items-center gap-3">
+                          <input 
+                            type="number" 
+                            v-model.number="activeRace.stepCounts[seg.label === 'Start - H1' ? `0-${seg.distance}` : `${seg.distance_start}-${seg.distance_end}` || seg.label]" 
+                            @blur="saveActiveRace"
+                            placeholder="---"
+                            class="w-16 bg-white/10 border-none rounded-lg p-1.5 text-center text-sm font-bold focus:ring-2 focus:ring-blue-500 text-white"
+                          >
+                          <span class="text-[10px] text-slate-500 uppercase font-bold">pas</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Hurdle Times Table -->
+                  <div class="overflow-hidden border border-slate-100 rounded-2xl bg-white shadow-sm">
+                    <table class="w-full text-left text-sm">
+                      <thead class="bg-slate-50 text-slate-400 font-bold text-[9px] uppercase">
+                        <tr>
+                          <th class="px-4 py-3">Séquence</th>
+                          <th class="px-4 py-3 text-right">Temps</th>
+                          <th class="px-4 py-3 text-right">Vitesse</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-slate-100">
+                        <tr v-for="seg in hurdleAnalysis" :key="'hurdle-time-' + seg.label" class="hover:bg-slate-50 transition-colors">
+                          <td class="px-4 py-3 text-xs font-bold text-slate-700">{{ seg.label }}</td>
+                          <td class="px-4 py-3 text-right font-mono font-bold text-slate-900">{{ seg.time.toFixed(3) }}s</td>
+                          <td class="px-4 py-3 text-right">
+                            <span class="text-blue-600 font-black">{{ seg.speed.toFixed(2) }}</span>
+                            <span class="text-[9px] text-slate-400 ml-1">m/s</span>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
               <!-- Metrics Summary (Primitive Segments) -->
               <div v-if="segmentSpeeds.length > 0">
                 <h4 class="text-sm font-bold text-slate-900 uppercase tracking-widest mb-4">Détail technique par segment</h4>
@@ -412,6 +464,12 @@ const segmentSpeeds = computed(() => {
   // Ensure we are calling the method on the Race instance
   const raceInstance = activeRace.value instanceof Race ? activeRace.value : new Race(activeRace.value);
   return raceInstance.segmentSpeeds;
+});
+
+const hurdleAnalysis = computed(() => {
+  if (!activeRace.value) return [];
+  const raceInstance = activeRace.value instanceof Race ? activeRace.value : new Race(activeRace.value);
+  return raceInstance.hurdleAnalysis;
 });
 
 const customIntervals = computed(() => {
