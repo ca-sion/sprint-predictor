@@ -13,10 +13,10 @@
       <!-- Athlete Management -->
       <div class="lg:col-span-2 space-y-6">
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-          <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+          <div class="p-4 sm:p-6 border-b border-slate-100 flex items-center justify-between">
             <h3 class="text-lg font-bold text-slate-900">Vos athlètes</h3>
-            <button @click="createNewAthlete" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm">
-              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button @click="createNewAthlete" class="inline-flex items-center px-3 py-2 sm:px-4 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold rounded-lg transition-colors shadow-sm">
+              <svg class="w-4 h-4 mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
               </svg>
               Nouveau
@@ -31,32 +31,32 @@
               Aucun athlète enregistré. Commencez par en créer un.
             </div>
             
-            <div v-for="(athlete, id) in athletes" :key="id" class="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors group">
-              <div class="flex items-center space-x-4">
-                <div class="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 font-bold">
+            <div v-for="(athlete, id) in athletes" :key="id" class="p-4 flex flex-col sm:flex-row sm:items-center justify-between hover:bg-slate-50 transition-colors group">
+              <div class="flex items-center space-x-4 mb-4 sm:mb-0">
+                <div class="w-10 h-10 flex-shrink-0 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 font-bold">
                   {{ (athlete.name || '?').charAt(0).toUpperCase() }}
                 </div>
-                <div>
-                  <div class="font-bold text-slate-900">{{ athlete.name || 'Sans nom' }}</div>
+                <div class="min-w-0">
+                  <div class="font-bold text-slate-900 truncate">{{ athlete.name || 'Sans nom' }}</div>
                   <div class="text-xs text-slate-500">{{ getAthleteSub(athlete) }}</div>
                 </div>
               </div>
-              <div class="flex items-center space-x-2">
+              <div class="flex items-center justify-end space-x-1.5 sm:space-x-2">
                 <button @click="shareAthlete(athlete)" class="p-2 text-slate-400 hover:text-blue-600 transition-colors" title="Partager">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
                   </svg>
                 </button>
-                <button @click="viewProfile(id)" class="px-3 py-1.5 bg-white border border-slate-200 hover:border-blue-600 hover:text-blue-600 text-slate-700 text-xs font-bold rounded transition-all">
+                <button @click="viewProfile(id)" class="px-2.5 py-1.5 bg-white border border-slate-200 hover:border-blue-600 hover:text-blue-600 text-slate-700 text-[11px] font-bold rounded transition-all">
                   Profil
                 </button>
-                <button @click="selectAthlete(id)" class="px-3 py-1.5 bg-slate-100 hover:bg-blue-600 hover:text-white text-slate-700 text-xs font-bold rounded transition-all">
+                <button @click="selectAthlete(id)" class="px-2.5 py-1.5 bg-slate-100 hover:bg-blue-600 hover:text-white text-slate-700 text-[11px] font-bold rounded transition-all">
                   Analyse
                 </button>
-                <button @click="analyzeAthlete(id)" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 text-xs font-bold rounded transition-all">
+                <button @click="analyzeAthlete(id)" class="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 text-[11px] font-bold rounded transition-all">
                   Courses
                 </button>
-                <button @click="deleteAthlete(id)" class="p-2 text-slate-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all">
+                <button @click="deleteAthlete(id)" class="p-2 text-slate-400 hover:text-red-600 sm:opacity-0 sm:group-hover:opacity-100 transition-all">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                   </svg>

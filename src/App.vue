@@ -16,15 +16,66 @@
           <router-link to="/races-analysis" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors" active-class="text-blue-600">Courses</router-link>
         </nav>
 
-        <div class="flex items-center space-x-3">
-          <div v-if="currentAthlete" class="hidden sm:flex items-center px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-bold border border-blue-100 mr-2">
+        <div class="flex items-center space-x-2 sm:space-x-3">
+          <div v-if="currentAthlete" class="hidden lg:flex items-center px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-bold border border-blue-100 mr-2">
             {{ currentAthlete.name }}
           </div>
-          <router-link v-if="currentAthlete" :to="`/athlete/${currentAthlete.id}`" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm">
-            Profile & PB
+          <router-link v-if="currentAthlete" :to="`/athlete/${currentAthlete.id}`" class="px-3 py-2 sm:px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs sm:text-sm font-semibold transition-colors shadow-sm">
+            <span class="hidden sm:inline">Profile & PB</span>
+            <span class="sm:hidden">Profil</span>
           </router-link>
+          
+          <!-- Mobile Menu Button -->
+          <button @click="isMobileMenuOpen = !isMobileMenuOpen" class="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+            <svg v-if="!isMobileMenuOpen" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/>
+            </svg>
+            <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
         </div>
       </div>
+
+      <!-- Mobile Navigation -->
+      <transition 
+        enter-active-class="transition duration-200 ease-out"
+        enter-from-class="opacity-0 -translate-y-4"
+        enter-to-class="opacity-100 translate-y-0"
+        leave-active-class="transition duration-150 ease-in"
+        leave-from-class="opacity-100 translate-y-0"
+        leave-to-class="opacity-0 -translate-y-4"
+      >
+        <div v-if="isMobileMenuOpen" class="md:hidden bg-white border-b border-slate-200 px-4 py-4 space-y-1 shadow-xl">
+          <router-link 
+            to="/" 
+            @click="isMobileMenuOpen = false"
+            class="block px-4 py-3 text-base font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 rounded-xl transition-all"
+            active-class="bg-blue-50 text-blue-600"
+          >
+            Accueil
+          </router-link>
+          <router-link 
+            to="/analysis" 
+            @click="isMobileMenuOpen = false"
+            class="block px-4 py-3 text-base font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 rounded-xl transition-all"
+            active-class="bg-blue-50 text-blue-600"
+          >
+            Analyse
+          </router-link>
+          <router-link 
+            to="/races-analysis" 
+            @click="isMobileMenuOpen = false"
+            class="block px-4 py-3 text-base font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 rounded-xl transition-all"
+            active-class="bg-blue-50 text-blue-600"
+          >
+            Courses
+          </router-link>
+          <div v-if="currentAthlete" class="pt-2 pb-1 px-4 text-xs font-bold text-slate-400 uppercase tracking-wider">
+            Athlète actuel : {{ currentAthlete.name }}
+          </div>
+        </div>
+      </transition>
     </header>
 
     <!-- Main Content -->
@@ -41,7 +92,7 @@
       <div class="max-w-7xl mx-auto px-4 text-center">
         <p class="text-slate-500 text-sm font-medium">Sprint Predictor</p>
         <p class="text-slate-400 text-xs mt-1">
-          Développé par <a href="https://michaelravedoni.com" class="underline hover:text-blue-500">MR</a>
+          Développé par <a href="https://michaelravedoni.com" class="underline hover:text-blue-500" target="_blank">MR</a>
         </p>
       </div>
     </footer>
@@ -53,6 +104,7 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { Athlete } from './models/Athlete.js';
 
 const currentAthlete = ref(null);
+const isMobileMenuOpen = ref(false);
 
 const updateCurrentAthlete = () => {
   const savedId = localStorage.getItem('sprint_predictor_current_athlete');

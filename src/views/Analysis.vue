@@ -325,7 +325,7 @@ const targetEvent = ref('100m');
 const prediction = ref(null);
 const analysis = ref(null);
 const inputGroups = INPUT_GROUPS;
-const openGroups = ref([true, false, false, false]);
+const openGroups = ref([false, false, false, false]);
 const bibliography = BIBLIOGRAPHY;
 
 const standardsChartCanvas = ref(null);
