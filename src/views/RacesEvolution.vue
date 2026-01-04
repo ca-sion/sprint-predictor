@@ -66,7 +66,7 @@
             <div class="flex items-center gap-4">
               <div class="flex items-center gap-1.5">
                 <div class="w-2 h-2 rounded-full bg-blue-400/50"></div>
-                <span class="text-[10px] font-bold text-slate-500 uppercase">Potentiel</span>
+                <span class="text-[10px] font-bold text-slate-500 uppercase">Potentiel théorique</span>
               </div>
               <div class="flex items-center gap-1.5">
                 <div class="w-2 h-2 rounded-full bg-blue-600"></div>
@@ -148,7 +148,7 @@
           <div v-if="potentialRow" class="flex border-b border-blue-100 bg-blue-50/30 relative">
             <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-400"></div>
             <div class="w-40 flex-shrink-0 p-4 border-r border-blue-100 flex flex-col justify-center">
-              <span class="text-[9px] font-black text-blue-500 uppercase tracking-tighter mb-1">Potentiel (Théorie)</span>
+              <span class="text-[9px] font-black text-blue-500 uppercase tracking-tighter mb-1">Potentiel théorique</span>
               <span class="text-xl font-black text-blue-600 tabular-nums">{{ potentialRow.totalTime.toFixed(2) }}s</span>
             </div>
             <div class="flex-1 flex">
@@ -241,7 +241,7 @@
           <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-400"></div>
           <div class="w-48 flex-shrink-0 pr-6">
             <div class="flex items-center gap-2 mb-1">
-              <span class="text-[8px] font-black bg-blue-500 text-white px-1.5 py-0.5 rounded uppercase shadow-sm">Théorie</span>
+              <span class="text-[8px] font-black bg-blue-500 text-white px-1.5 py-0.5 rounded uppercase shadow-sm">TB</span>
             </div>
             <div class="flex items-baseline gap-2">
                <span class="text-2xl font-black text-blue-600 leading-none">{{ potentialRow.totalTime.toFixed(2) }}<span class="text-xs ml-0.5 opacity-40">s</span></span>
@@ -279,7 +279,7 @@
                   {{ formatDiff(virtualBestRow.totalTime - getRaceTotalTime(pbRace)) }}
                </span>
             </div>
-            <span class="text-[10px] font-black text-purple-400/80 uppercase tracking-widest block mt-1">Record Virtuel (Terrain)</span>
+            <span class="text-[10px] font-black text-purple-400/80 uppercase tracking-widest block mt-1">Record virtuel</span>
           </div>
 
           <div class="flex-1 relative py-4">
@@ -391,7 +391,7 @@ const COLOR_THEMES = {
 };
 
 const getCellStyles = (val, ref, metric) => {
-  if (!val || !ref) return { backgroundColor: '#f8fafc', color: '#cbd5e1' };
+  if (val === undefined || val === null || val === 0 || !ref) return { backgroundColor: '#f8fafc', color: '#cbd5e1' };
   
   const isHigherBetter = metric !== 'time';
   const ratio = isHigherBetter ? (val / ref) : (ref / val);
@@ -409,10 +409,10 @@ const comparisonChartCanvas = ref(null);
 let comparisonChart = null;
 
 const metrics = [
-  { id: 'speed', label: 'Vitesse' },
-  { id: 'frequency', label: 'Fréq.' },
-  { id: 'stepLength', label: 'Ampl.' },
-  { id: 'time', label: 'Temps' }
+  { id: 'speed', label: 'Vitesse', unit: 'm/s' },
+  { id: 'frequency', label: 'Fréq.', unit: 'Hz' },
+  { id: 'stepLength', label: 'Ampl.', unit: 'm' },
+  { id: 'time', label: 'Temps', unit: 's' }
 ];
 
 // --- PB SYNC LOGIC (Manual Validation) ---
@@ -437,21 +437,56 @@ const manualSyncPB = (race) => {
 
 // --- VIRTUAL ROWS LOGIC ---
 const potentialRow = computed(() => {
-  if (!prediction.value) return null;
+  if (!prediction.value || !prediction.value.profile) return null;
+  
+  const { vmax, tau } = prediction.value.profile;
+  const scaleFactor = prediction.value.scaleFactor || 1.0;
   
   const theorySegments = templateSegments.value.map(t => {
-    const match = prediction.value.splits.find(ts => Math.abs(ts.distance - t.end) < 5);
-    if (!match) return 0;
+    // We use the physics model directly for perfect accuracy on segments
+    const tStartRaw = engine.calculateTimeAtDistance(t.start, vmax, tau);
+    const tEndRaw = engine.calculateTimeAtDistance(t.end, vmax, tau);
     
-    if (activeMetric.value === 'speed') return match.velocity;
-    if (activeMetric.value === 'time') return match.segmentTime;
-    return 0;
+    // Applying scaling: segmentTime = (tEndRaw - tStartRaw) * scaleFactor
+    let segmentTime = (tEndRaw - tStartRaw) * scaleFactor;
+    
+    // Crucial: If segment starts at 0, it must include the scaled reaction time 
+    // to match real-world timing (where 0-30m includes RT).
+    if (t.start === 0) {
+        segmentTime += (engine.CONSTANTS.REACTION_TIME * scaleFactor);
+    }
+
+    const segmentDist = t.end - t.start;
+    
+    if (activeMetric.value === 'speed') return segmentDist / segmentTime;
+    if (activeMetric.value === 'time') return segmentTime;
+    
+    // For frequency and step length, use average of splits in range
+    const splitsInRange = prediction.value.splits.filter(s => s.distance > t.start && s.distance <= t.end);
+    if (splitsInRange.length > 0) {
+        return splitsInRange.reduce((acc, s) => acc + (s[activeMetric.value] || 0), 0) / splitsInRange.length;
+    }
+    
+    // Fallback if no splits in range (e.g. very small segment)
+    const nearest = prediction.value.splits.reduce((prev, curr) => 
+      Math.abs(curr.distance - t.end) < Math.abs(prev.distance - t.end) ? curr : prev
+    );
+    return nearest[activeMetric.value] || 0;
   });
 
   return {
     totalTime: parseFloat(prediction.value.time),
     segments: theorySegments
   };
+});
+
+const pbRow = computed(() => {
+  if (!pbRace.value) return null;
+  const segments = templateSegments.value.map((t, idx) => {
+    const data = getRaceSegmentData(pbRace.value, idx);
+    return data ? data[activeMetric.value] : 0;
+  });
+  return { segments };
 });
 
 const virtualBestRow = computed(() => {
@@ -512,12 +547,22 @@ const runAnalysis = () => {
 
 const renderComparisonChart = () => {
   const ctx = comparisonChartCanvas.value?.getContext('2d');
-  if (!ctx || !prediction.value) return;
+  if (!ctx) return;
   if (comparisonChart) comparisonChart.destroy();
-
+  
   const labels = templateSegments.value.map(s => s.label);
   const theoryData = potentialRow.value?.segments || [];
   const vbData = virtualBestRow.value?.segments || [];
+  const pbData = pbRow.value?.segments || [];
+  
+  const currentMetric = metrics.find(m => m.id === activeMetric.value);
+
+  // Find peak theory point for highlighting
+  let peakIdx = -1;
+  if (activeMetric.value === 'speed' && theoryData.length > 0) {
+    const maxVal = Math.max(...theoryData);
+    peakIdx = theoryData.indexOf(maxVal);
+  }
 
   comparisonChart = new Chart(ctx, {
     type: 'line',
@@ -525,35 +570,60 @@ const renderComparisonChart = () => {
       labels,
       datasets: [
         {
-          label: 'Potentiel (Théorie)',
+          label: `Potentiel théorique (${currentMetric.label})`,
           data: theoryData,
           borderColor: 'rgba(59, 130, 246, 0.4)',
           borderDash: [5, 5],
           backgroundColor: 'transparent',
           tension: 0.4,
-          pointRadius: 0
+          pointRadius: (ctx) => (ctx.dataIndex === peakIdx ? 6 : 0),
+          pointBackgroundColor: '#3b82f6',
+          pointBorderWidth: 2,
+          pointBorderColor: '#fff',
+          zIndex: 1
         },
         {
-          label: 'Réalité (VB)',
+          label: `Record (PB)`,
+          data: pbData,
+          borderColor: '#facc15', // Yellow-400
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          pointRadius: 3,
+          pointBackgroundColor: '#facc15',
+          tension: 0.4,
+          zIndex: 2
+        },
+        {
+          label: `Record virtuel (VB)`,
           data: vbData,
           borderColor: '#2563eb',
           backgroundColor: 'rgba(37, 99, 235, 0.1)',
           fill: true,
           tension: 0.4,
           pointRadius: 4,
-          pointBackgroundColor: '#2563eb'
+          pointBackgroundColor: '#2563eb',
+          zIndex: 0
         }
       ]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: { 
+        legend: { display: false },
+        tooltip: {
+            mode: 'index',
+            intersect: false,
+            callbacks: {
+                label: (context) => `${context.dataset.label}: ${context.raw.toFixed(2)}${currentMetric.unit}`
+            }
+        }
+      },
       scales: {
         y: { 
             grid: { color: '#f1f5f9' }, 
-            title: { display: true, text: activeMetric.value === 'speed' ? 'm/s' : 's', font: { size: 10 } },
-            beginAtZero: false
+            title: { display: true, text: currentMetric.unit, font: { size: 10, weight: 'bold' } },
+            beginAtZero: activeMetric.value !== 'speed'
         },
         x: { grid: { display: false } }
       }
@@ -576,7 +646,8 @@ const filteredRaces = computed(() => {
 const pbRace = computed(() => {
   const finished = filteredRaces.value.filter(r => getRaceTotalTime(r) > 0);
   if (finished.length === 0) return null;
-  return finished.reduce((prev, curr) => getRaceTotalTime(curr) < getRaceTotalTime(prev) ? curr : prev);
+  // Use a small epsilon for more stable PB detection
+  return finished.reduce((prev, curr) => getRaceTotalTime(curr) < getRaceTotalTime(prev) - 0.001 ? curr : prev);
 });
 
 const sortedRaces = computed(() => {
@@ -629,8 +700,20 @@ const potentialTimelineSegments = computed(() => {
     
     const time = endSplit.time - startSplit.time;
     let val = 0;
-    if (activeMetric.value === 'speed') val = (seg.end - seg.start) / time;
-    if (activeMetric.value === 'time') val = time;
+    
+    if (activeMetric.value === 'speed') {
+      val = (seg.end - seg.start) / time;
+    } else if (activeMetric.value === 'time') {
+      val = time;
+    } else {
+      // For frequency and step length, average splits in range
+      const splitsInRange = prediction.value.splits.filter(s => s.distance > seg.start && s.distance <= seg.end);
+      if (splitsInRange.length > 0) {
+        val = splitsInRange.reduce((acc, s) => acc + (s[activeMetric.value] || 0), 0) / splitsInRange.length;
+      } else {
+        val = endSplit[activeMetric.value] || 0;
+      }
+    }
     
     return { time, [activeMetric.value]: val };
   });
@@ -681,11 +764,11 @@ const getLinearSegments = (race) => {
 };
 
 const getRaceTotalTime = (race) => {
-    if (!race || !race.milestones) return 0;
+    if (!race) return 0;
+    const raceInstance = race instanceof Race ? race : new Race(race);
     const dist = parseInt(race.discipline);
-    const finish = race.milestones.find(m => m.distance === dist);
-    const start = race.milestones.find(m => m.distance === 0);
-    return (finish && start) ? finish.time - start.time : 0;
+    const result = raceInstance.calculateIntervals([{ start: 0, end: dist }])[0];
+    return result ? result.time : 0;
 };
 
 const formatValue = (v) => typeof v === 'number' ? v.toFixed(2) : '-';

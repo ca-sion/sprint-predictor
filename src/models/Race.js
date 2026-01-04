@@ -178,10 +178,11 @@ export class Race {
             const mStart = this.milestones.find(m => m.distance === item.start);
             const mEnd = this.milestones.find(m => m.distance === item.end);
             
-            if (!mStart || !mEnd || mEnd.time <= mStart.time) return null;
+            const startTime = item.start === 0 ? (mStart ? mStart.time : 0) : (mStart ? mStart.time : null);
+            if (startTime === null || !mEnd || mEnd.time <= startTime) return null;
             
-            const time = mEnd.time - mStart.time;
-            const distance = mEnd.distance - mStart.distance;
+            const time = mEnd.time - startTime;
+            const distance = mEnd.distance - item.start;
             const speed = distance / time;
             
             // Calculate total steps for this range by summing primitive segments

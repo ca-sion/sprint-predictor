@@ -478,15 +478,34 @@ export class PredictionEngine {
 
         // Splits Scaling
         const splits = [];
-        let prevTime = this.CONSTANTS.REACTION_TIME;
         const scaleFactor = finalTime / physicsTime; 
-        for(let d=10; d<=distance; d+=10) {
+        let prevTime = this.CONSTANTS.REACTION_TIME * scaleFactor;
+        
+        // Base Step Length estimation (heuristic: scales slightly with velocity)
+        const baseStepLen = athlete.metrics.step_len_avg_r || 2.0;
+
+        const res = distance <= 110 ? 5 : 10;
+        for(let d=res; d<=distance; d+=res) {
             const st = (this.calculateTimeAtDistance(d, vmax, tau) + this.CONSTANTS.REACTION_TIME) * scaleFactor;
-            splits.push({ distance: d, time: st, segmentTime: st - prevTime, velocity: 10/(st - prevTime) });
+            const segmentTime = st - prevTime;
+            const velocity = res / segmentTime;
+            
+            // Heuristic for theoretical step length: increases with velocity
+            const theoreticalSL = baseStepLen * (0.85 + 0.15 * (velocity / vmax));
+            const theoreticalFreq = velocity / theoreticalSL;
+
+            splits.push({ 
+                distance: d, 
+                time: st, 
+                segmentTime, 
+                velocity,
+                frequency: theoreticalFreq,
+                stepLength: theoreticalSL
+            });
             prevTime = st;
         }
 
-        return { time: finalTime.toFixed(2), range: 0.10, splits, tags: [usedMethod], sources: [] };
+        return { time: finalTime.toFixed(2), range: 0.10, splits, scaleFactor, tags: [usedMethod], sources: [] };
     }
 
     /**
@@ -516,7 +535,7 @@ export class PredictionEngine {
         splits.push({ distance: 150, time: t150, segmentTime: t100_150, velocity: 50 / t100_150 });
         splits.push({ distance: 200, time: predictedTime, segmentTime: predictedTime - t150, velocity: 50 / (predictedTime - t150) });
 
-        return { time: predictedTime.toFixed(2), range: 0.25, splits, tags: [bias, `Base 100m + Delta ${delta}s`], sources: [] };
+        return { time: predictedTime.toFixed(2), range: 0.25, splits, scaleFactor: 1.0, tags: [bias, `Base 100m + Delta ${delta}s`], sources: [] };
     }
 
     /**
@@ -548,7 +567,7 @@ export class PredictionEngine {
         splits.push({ distance: 200, time: pacing200, segmentTime: pacing200, velocity: 200/pacing200 });
         splits.push({ distance: 400, time: predictedTime, segmentTime: predictedTime - pacing200, velocity: 200/(predictedTime - pacing200) });
 
-        return { time: predictedTime.toFixed(2), range: 0.8, splits, tags: ["ASR Model", profileType, `Margin +${margin}s`], sources: [], model: data?.model };
+        return { time: predictedTime.toFixed(2), range: 0.8, splits, scaleFactor: 1.0, tags: ["ASR Model", profileType, `Margin +${margin}s`], sources: [], model: data?.model };
     }
 
     /**
