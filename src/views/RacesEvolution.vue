@@ -105,21 +105,27 @@
           </div>
         </div>
 
-        <div class="flex items-center gap-3">
-          <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Analyse :</span>
-          <div class="flex bg-slate-100 p-1 rounded-lg">
-            <button 
-              @click="viewMode = 'heatmap'"
-              :class="['px-3 py-1.5 rounded-md text-[10px] font-black uppercase transition-all', viewMode === 'heatmap' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-900']"
-            >
-              Intensité
-            </button>
-            <button 
-              @click="viewMode = 'delta'"
-              :class="['px-3 py-1.5 rounded-md text-[10px] font-black uppercase transition-all', viewMode === 'delta' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-900']"
-            >
-              Écart PB
-            </button>
+        <div class="flex flex-wrap items-center gap-6">
+          <div class="flex items-center gap-3">
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Thème :</span>
+            <div class="flex bg-slate-100 p-1 rounded-lg">
+              <button 
+                v-for="(tName, tKey) in THEME_LABELS" 
+                :key="tKey"
+                @click="activeTheme = tKey"
+                :class="['px-3 py-1.5 rounded-md text-[10px] font-black uppercase transition-all', activeTheme === tKey ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500 hover:text-slate-900']"
+              >
+                {{ tName }}
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Tolérance :</span>
+            <div class="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-lg">
+              <input type="range" min="2" max="30" v-model.number="sensitivity" class="w-20 h-1.5 bg-slate-300 rounded-lg appearance-none cursor-pointer accent-blue-600">
+              <span class="text-[10px] font-black text-slate-600 w-6">{{ sensitivity }}%</span>
+            </div>
           </div>
         </div>
       </div>
@@ -247,11 +253,12 @@
           <div class="flex-1 relative py-4">
             <div class="flex h-6 w-full bg-blue-100/30 rounded-full overflow-hidden shadow-inner relative z-20 border-2 border-blue-200/50">
               <div v-for="(seg, sIdx) in potentialTimelineSegments" :key="'seg-pot-'+sIdx"
-                   class="h-full relative border-r border-white/20 last:border-0"
+                   class="h-full relative border-r border-white/60 last:border-0 flex items-center justify-center overflow-hidden"
                    :style="{ 
                      width: (seg.time / maxTotalTime) * 100 + '%',
-                     ...getCellStyles(seg[activeMetric], virtualBestSegments[sIdx], activeMetric)
+                     ...getCellStyles(seg[activeMetric], virtualBestTimelineSegments[sIdx]?.[activeMetric], activeMetric)
                    }">
+                <span class="text-[8px] font-black leading-none truncate">{{ formatMetricValue(seg[activeMetric]) }}</span>
               </div>
             </div>
           </div>
@@ -276,11 +283,12 @@
           <div class="flex-1 relative py-4">
             <div class="flex h-6 w-full bg-purple-100/30 rounded-full overflow-hidden shadow-inner relative z-20 border-2 border-purple-200/50">
               <div v-for="(seg, sIdx) in virtualBestTimelineSegments" :key="'seg-vb-'+sIdx"
-                   class="h-full relative border-r border-white/20 last:border-0"
+                   class="h-full relative border-r border-white/60 last:border-0 flex items-center justify-center overflow-hidden"
                    :style="{ 
                      width: (seg.time / maxTotalTime) * 100 + '%',
-                     ...getCellStyles(seg[activeMetric], virtualBestSegments[sIdx], activeMetric)
+                     ...getCellStyles(seg[activeMetric], seg[activeMetric], activeMetric)
                    }">
+                <span class="text-[8px] font-black leading-none truncate">{{ formatMetricValue(seg[activeMetric]) }}</span>
               </div>
             </div>
           </div>
@@ -315,11 +323,12 @@
 
             <div class="flex h-6 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner relative z-20 border-2 border-slate-200">
               <div v-for="(seg, sIdx) in getTimelineSegmentsForRace(race)" :key="'seg-'+sIdx"
-                   class="h-full relative transition-all group/timeline border-r border-white/5 last:border-0"
+                   class="h-full relative transition-all group/timeline border-r border-white/60 last:border-0 flex items-center justify-center overflow-hidden"
                    :style="{ 
                      width: (seg.time / maxTotalTime) * 100 + '%', 
-                     ...getCellStyles(seg[activeMetric], virtualBestSegments[sIdx], activeMetric) 
+                     ...getCellStyles(seg[activeMetric], virtualBestTimelineSegments[sIdx]?.[activeMetric], activeMetric) 
                    }">
+                <span class="text-[8px] font-black leading-none truncate">{{ formatMetricValue(seg[activeMetric]) }}</span>
               </div>
             </div>
           </div>
@@ -341,8 +350,48 @@ const athlete = ref(null);
 const races = ref([]);
 const selectedDiscipline = ref('100m');
 const activeMetric = ref('speed');
-const viewMode = ref('heatmap');
+const activeTheme = ref('indigo');
+const sensitivity = ref(10);
 const layoutMode = ref('timeline');
+
+const THEME_LABELS = {
+  indigo: 'Intensité',
+  traffic: 'Trafic',
+  elite: 'Élite'
+};
+
+const COLOR_THEMES = {
+  indigo: (score) => {
+    const lightness = 96 - (score * 50);
+    return { backgroundColor: `hsl(230, 80%, ${lightness}%)`, color: lightness > 65 ? '#1e1b4b' : '#fff' };
+  },
+  traffic: (score) => {
+    const hue = score < 0.5 ? score * 2 * 45 : 45 + (score - 0.5) * 2 * 85;
+    return { backgroundColor: `hsl(${hue}, 85%, 65%)`, color: '#1a1a1a' };
+  },
+  elite: (score) => {
+    if (score < 0.7) {
+      const s = score / 0.7;
+      return { backgroundColor: `hsl(240, 10%, ${95 - s * 20}%)`, color: '#1a1a1a' };
+    }
+    const s = (score - 0.7) / 0.3;
+    const hue = 280 - (s * 40); // Violet to Gold-ish
+    return { backgroundColor: `hsl(${hue}, 80%, 60%)`, color: '#fff' };
+  }
+};
+
+const getCellStyles = (val, ref, metric) => {
+  if (!val || !ref) return { backgroundColor: '#f8fafc', color: '#cbd5e1' };
+  
+  const isHigherBetter = metric !== 'time';
+  const ratio = isHigherBetter ? (val / ref) : (ref / val);
+  
+  // Adaptive Score Engine
+  const minRatio = 1 - (sensitivity.value / 100);
+  const normalized = Math.max(0, Math.min(1, (ratio - minRatio) / (1 - minRatio)));
+  
+  return COLOR_THEMES[activeTheme.value](normalized);
+};
 
 const engine = new PredictionEngine();
 const prediction = ref(null);
@@ -632,29 +681,6 @@ const getRaceTotalTime = (race) => {
 const formatValue = (v) => typeof v === 'number' ? v.toFixed(2) : '-';
 const formatDiff = (v) => typeof v === 'number' ? (v > 0 ? '+' : '') + v.toFixed(2) : '-';
 const formatMetricValue = (val) => (val === undefined || val === null || val === 0) ? '-' : val.toFixed(2);
-
-const getCellStyles = (val, ref, metric) => {
-  if (!val || !ref) return { backgroundColor: '#f8fafc', color: '#cbd5e1' };
-  const isHigherBetter = metric !== 'time';
-  const ratio = isHigherBetter ? (val / ref) : (ref / val);
-  const clampedRatio = Math.max(0.94, Math.min(1.0, ratio));
-  const normalized = (clampedRatio - 0.94) / 0.06;
-  
-  if (viewMode.value === 'heatmap') {
-    const lightness = 96 - (normalized * 60);
-    return { backgroundColor: `hsl(235, 75%, ${lightness}%)`, color: lightness > 65 ? '#1e1b4b' : '#fff' };
-  } else {
-    let hue = normalized > 0.5 ? 45 + (normalized - 0.5) * 2 * 97 : normalized * 2 * 45;
-    return { backgroundColor: `hsl(${hue}, 80%, 70%)`, color: '#000' };
-  }
-};
-
-const getLinearCellStyles = (segment, race) => {
-  const raceInstance = race instanceof Race ? race : new Race(race);
-  const idx = raceInstance.segmentSpeeds.findIndex(s => s.label === segment.label);
-  const refVal = virtualBestSegments.value[idx];
-  return getCellStyles(segment[activeMetric.value], refVal, activeMetric.value);
-};
 
 const getGridCellStyles = (race, index) => {
   const seg = getRaceSegmentData(race, index);
