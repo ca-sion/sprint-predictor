@@ -184,7 +184,17 @@
                 <span class="text-[8px] font-black bg-yellow-400 text-white px-1.5 py-0.5 rounded shadow-sm">RECORD</span>
                 <span class="text-[10px] font-bold text-slate-500">{{ formatDate(pbRace.date) }}</span>
               </div>
-              <span class="text-xl font-black text-slate-900 tabular-nums">{{ getRaceTotalTime(pbRace).toFixed(2) }}s</span>
+              <div class="flex items-baseline gap-2">
+                <span class="text-xl font-black text-slate-900 tabular-nums">{{ getRaceTotalTime(pbRace).toFixed(2) }}s</span>
+                
+                <!-- PB Validation Button (Centralized) -->
+                <button v-if="isPotentialNewPB(pbRace)" 
+                        @click="manualSyncPB(pbRace)"
+                        title="Mettre à jour le record du profil"
+                        class="px-1.5 py-0.5 bg-emerald-500 text-white text-[8px] font-black uppercase rounded animate-pulse hover:bg-emerald-600 transition-colors">
+                  Nouveau PB ?
+                </button>
+              </div>
             </div>
             <div class="flex-1 flex">
               <div v-for="(tSeg, idx) in templateSegments" :key="'pb-seg-'+idx" class="flex-1 border-r border-yellow-100/50 last:border-0 p-1">
@@ -206,15 +216,7 @@
               <div class="flex items-baseline gap-2 flex-wrap">
                 <span class="text-sm font-black text-slate-800 tabular-nums">{{ getRaceTotalTime(race).toFixed(2) }}s</span>
                 
-                <!-- PB Validation Button -->
-                <button v-if="isPotentialNewPB(race)" 
-                        @click="manualSyncPB(race)"
-                        title="Mettre à jour le record du profil"
-                        class="px-1.5 py-0.5 bg-emerald-500 text-white text-[8px] font-black uppercase rounded animate-pulse hover:bg-emerald-600 transition-colors">
-                  Nouveau PB ?
-                </button>
-
-                <span v-if="pbRace && !isPotentialNewPB(race)" :class="['text-[9px] font-bold', getRaceTotalTime(race) > getRaceTotalTime(pbRace) ? 'text-red-500' : 'text-green-500']">
+                <span v-if="pbRace" :class="['text-[9px] font-bold', getRaceTotalTime(race) > getRaceTotalTime(pbRace) ? 'text-red-500' : 'text-green-500']">
                   {{ formatDiff(getRaceTotalTime(race) - getRaceTotalTime(pbRace)) }}
                 </span>
               </div>
@@ -304,6 +306,14 @@
             </div>
             <div class="flex items-baseline gap-2">
                <span class="text-2xl font-black text-slate-900 leading-none">{{ getRaceTotalTime(race).toFixed(2) }}<span class="text-xs ml-0.5 opacity-40">s</span></span>
+               
+               <!-- PB Sync Badge in Timeline -->
+               <button v-if="race.id === pbRace?.id && isPotentialNewPB(race)" 
+                        @click="manualSyncPB(race)"
+                        class="px-1.5 py-0.5 bg-emerald-500 text-white text-[8px] font-black uppercase rounded animate-pulse">
+                  Nouveau PB ?
+                </button>
+
                <span v-if="race.id !== pbRace?.id" :class="['text-xs font-bold', getRaceTotalTime(race) > getRaceTotalTime(pbRace) ? 'text-red-500' : 'text-green-500']">
                   {{ formatDiff(getRaceTotalTime(race) - getRaceTotalTime(pbRace)) }}
                </span>
