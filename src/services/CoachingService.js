@@ -199,15 +199,16 @@ export class CoachingService {
         }
 
         // 8. Power Analysis (Pmax)
-        if (profile.pmax) {
+        const pmax = profile.pmax || PhysicsService.calculatePmax(profile.vmax, profile.tau);
+        if (pmax) {
             const bench = this.getBenchmarkForAthlete(athlete);
             const targetPmax = bench.pmax;
             grid.push({
                 id: 'pmax',
                 label: 'Puissance (Pmax)',
-                value: profile.pmax,
+                value: pmax,
                 target: [targetPmax - 2, targetPmax + 2],
-                status: profile.pmax > targetPmax + 1 ? 'excellent' : (profile.pmax < targetPmax - 2 ? 'bad' : 'good'),
+                status: pmax > targetPmax + 1 ? 'excellent' : (pmax < targetPmax - 2 ? 'bad' : 'good'),
                 unit: 'power'
             });
         }
