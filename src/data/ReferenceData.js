@@ -465,57 +465,57 @@ export const DISCIPLINES_CONFIG = {
 // --- 6. ANALYSIS TEMPLATES (Custom Intervals) ---
 export const ANALYSIS_TEMPLATES = {
   "50m": [
-    { label: "Mise en action", start: 0, end: 20, type: "accel" },
-    { label: "Vitesse", start: 20, end: 50, type: "total" },
+    { label: "Départ (0-20)", start: 0, end: 20, type: "accel" },
+    { label: "Vitesse (20-50)", start: 20, end: 50, type: "total" },
   ],
   "60m": [
-    { label: "Départ", start: 0, end: 30, type: "accel" },
-    { label: "Transition", start: 30, end: 60, type: "vmax" },
+    { label: "Départ (0-30)", start: 0, end: 30, type: "accel" },
+    { label: "Transition (30-60)", start: 30, end: 60, type: "vmax" },
     { label: "60m", start: 0, end: 60, type: "total" },
   ],
   "50mH": [
-    { label: "Mise en action (H1)", start: 0, end: 13.0, type: "accel" },
+    { label: "Départ (H1)", start: 0, end: 13.0, type: "accel" },
     { label: "Inter-haies (H1-H4)", start: 13.0, end: 38.5, type: "rhythm" },
     { label: "Final", start: 38.5, end: 50, type: "finish" },
   ],
   "60mH": [
-    { label: "Mise en action (H1)", start: 0, end: 13.0, type: "accel" },
+    { label: "Départ (H1)", start: 0, end: 13.0, type: "accel" },
     { label: "Inter-haies (H1-H5)", start: 13.0, end: 47.0, type: "rhythm" },
     { label: "Final", start: 47.0, end: 60, type: "finish" },
   ],
   "100m": [
-    { label: "Départ", start: 0, end: 30, type: "accel" },
-    { label: "Transition / Vmax", start: 30, end: 60, type: "vmax" },
-    { label: "Maintien de vitesse", start: 60, end: 100, type: "speed_maint" },
+    { label: "Départ (0-30)", start: 0, end: 30, type: "accel" },
+    { label: "Transition / Vmax (30-60)", start: 30, end: 60, type: "vmax" },
+    { label: "Maintien vitesse (60-100)", start: 60, end: 100, type: "speed_maint" },
     { label: "60m", start: 0, end: 60, type: "total" },
-    { label: "Endurance (50-100)", start: 50, end: 100, type: "endurance" },
     { label: "100m", start: 0, end: 100, type: "total" },
+    { label: "Endurance (50-100)", start: 50, end: 100, type: "endurance" },
   ],
   "200m": [
     { label: "Virage", start: 0, end: 100, type: "vmax" },
-    { label: "Ligne Droite", start: 100, end: 200, type: "speed_maint" },
+    { label: "Ligne droite", start: 100, end: 200, type: "speed_maint" },
     { label: "200m", start: 0, end: 200, type: "total" },
   ],
   "400m": [
     { label: "1er 200m", start: 0, end: 200, type: "total" },
-    { label: "2nd 200m", start: 200, end: 400, type: "total" },
+    { label: "2e 200m", start: 200, end: 400, type: "total" },
     { label: "Différentiel (2-1)", isDiff: true, startRef: 0, endRef: 200, startComp: 200, endComp: 400 },
-    { label: "Performance Totale", start: 0, end: 400, type: "total" },
+    { label: "400m", start: 0, end: 400, type: "total" },
   ],
   "110mH": [
-    { label: "Mise en action (H1)", start: 0, end: 13.72, type: "accel" },
+    { label: "Départ (H1)", start: 0, end: 13.72, type: "accel" },
     { label: "Inter-haies (H1-H10)", start: 13.72, end: 96.0, type: "rhythm" },
-    { label: "Final (H10-Arrivée)", start: 96.0, end: 110, type: "finish" },
+    { label: "Finale (H10-Arrivée)", start: 96.0, end: 110, type: "finish" },
   ],
   "100mH": [
-    { label: "Mise en action (H1)", start: 0, end: 13.0, type: "accel" },
+    { label: "Départ (H1)", start: 0, end: 13.0, type: "accel" },
     { label: "Inter-haies (H1-H10)", start: 13.0, end: 89.5, type: "rhythm" },
-    { label: "Final (H10-Arrivée)", start: 89.5, end: 100, type: "finish" },
+    { label: "Finale (H10-Arrivée)", start: 89.5, end: 100, type: "finish" },
   ],
   "400mH": [
-    { label: "H1", start: 0, end: 45.0, type: "accel" },
-    { label: "H1-H10", start: 45.0, end: 360.0, type: "rhythm" },
-    { label: "Final", start: 360.0, end: 400, type: "finish" },
+    { label: "Départ (H1)", start: 0, end: 45.0, type: "accel" },
+    { label: "Inter-haies (H1-H10", start: 45.0, end: 360.0, type: "rhythm" },
+    { label: "Finale", start: 360.0, end: 400, type: "finish" },
   ],
 };
 
