@@ -129,7 +129,7 @@ export class PredictionEngine {
 
         const splits = this.generateSplits(finalTime, physicsTime, distance, vmax, tau, metrics.step_len_avg_r || 2.0);
 
-        return { time: finalTime.toFixed(2), range: 0.10, splits, scaleFactor: finalTime / physicsTime, tags: [usedMethod] };
+        return { time: finalTime, range: 0.10, splits, scaleFactor: finalTime / physicsTime, tags: [usedMethod] };
     }
 
     /**
@@ -167,7 +167,7 @@ export class PredictionEngine {
         splits.push({ distance: 150, time: t150, segmentTime: t100_150, velocity: 50 / t100_150 });
         splits.push({ distance: 200, time: predictedTime, segmentTime: predictedTime - t150, velocity: 50 / (predictedTime - t150) });
 
-        return { time: predictedTime.toFixed(2), range: 0.25, splits, scaleFactor: 1.0, tags: [bias, `Base 100m + Delta ${delta}s`] };
+        return { time: predictedTime, range: 0.25, splits, scaleFactor: 1.0, tags: [bias, `Base 100m + Delta ${delta}s`] };
     }
 
     /**
@@ -192,7 +192,7 @@ export class PredictionEngine {
             { distance: 400, time: predictedTime, segmentTime: predictedTime - pacing200, velocity: 200/(predictedTime - pacing200) }
         ];
 
-        return { time: predictedTime.toFixed(2), range: 0.8, splits, scaleFactor: 1.0, tags: ["ASR Model", `Margin +${margin}s`] };
+        return { time: predictedTime, range: 0.8, splits, scaleFactor: 1.0, tags: ["ASR Model", `Margin +${margin}s`] };
     }
 
     /**
@@ -210,7 +210,7 @@ export class PredictionEngine {
         else if (athlete.gender === 'M') ie = ieMap.M || ie;
         
         return { 
-            time: (tFlat + ie).toFixed(2), 
+            time: tFlat + ie, 
             range: 0.3, 
             splits: pFlat.splits, 
             tags: ['Technique Index', `IE Target: +${ie}s`]
@@ -227,7 +227,7 @@ export class PredictionEngine {
         let diff = (athlete.gender === 'F' ? diffMap.F : diffMap.M) + (athlete.category === 'U18' ? diffMap.U18_bonus : 0);
         
         return { 
-            time: (t400 + diff).toFixed(2), 
+            time: t400 + diff, 
             range: 1.0, 
             splits: p400.splits, 
             tags: ["400mH Differential", `T400 + ${diff}s`] 

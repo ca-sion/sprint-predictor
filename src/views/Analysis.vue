@@ -180,15 +180,25 @@
                     </div>
                   </div>
                 </div>
-                <div class="text-[10px] font-mono text-slate-400">{{ row.diff }}</div>
+                <!-- Diff Badge -->
+                <div v-if="getDiffData(row)" 
+                     class="text-[9px] font-black px-1.5 py-0.5 rounded flex items-center gap-1"
+                     :class="getDiffData(row).isGood ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'">
+                  <span>{{ getDiffData(row).val }}</span>
+                </div>
+                <div v-else-if="row.target" class="text-[9px] font-black px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">OK</div>
               </div>
               <div class="flex items-baseline gap-2 mb-3">
-                <div class="text-2xl font-bold text-slate-800 tracking-tight">{{ row.value }}</div>
+                <div class="text-2xl font-bold text-slate-800 tracking-tight">
+                  {{ formatGridValue(row) }}
+                </div>
               </div>
             </div>
             <div class="mt-auto pt-3 border-t border-slate-100 flex items-center justify-between">
               <span v-if="row.level" class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter" :class="getBadgeClasses(row.status)">{{ row.level }}</span>
-              <div class="text-[9px] text-slate-400 font-medium italic text-right leading-tight">Cible: {{ row.target }}</div>
+              <div class="text-[9px] text-slate-400 font-medium italic text-right leading-tight">
+                Cible: {{ formatGridTarget(row) }}
+              </div>
             </div>
           </div>
         </div>
@@ -726,6 +736,63 @@ const renderFVProfileChart = () => {
 
 const getStatusClasses = (status) => CoachingService.getStatusClasses(status);
 const getBadgeClasses = (status) => CoachingService.getBadgeClasses(status);
+
+const formatGridValue = (row) => {
+  switch (row.unit) {
+    case 's': return FormatService.time(row.value);
+    case 's_target': return FormatService.time(row.value, 2);
+    case 'ms': return FormatService.number(row.value, 0) + 'ms';
+    case 'cm': return FormatService.number(row.value, 1) + ' cm';
+    case 'speed': return FormatService.speed(row.value);
+    default: return FormatService.number(row.value);
+  }
+};
+
+const formatGridTarget = (row) => {
+  if (Array.isArray(row.target)) {
+    const [min, max] = row.target;
+    switch (row.unit) {
+      case 's': return `${FormatService.number(min)}-${FormatService.number(max)}s`;
+      case 'ms': return `${FormatService.number(min, 0)}-${FormatService.number(max, 0)}ms`;
+      case 'cm': return `${FormatService.number(min, 0)}-${FormatService.number(max, 0)} cm`;
+      case 'speed': return `${FormatService.number(min)}-${FormatService.number(max)} m/s`;
+      default: return `${FormatService.number(min)}-${FormatService.number(max)}`;
+    }
+  }
+  
+  if (row.unit === 's_target') return `< ${FormatService.time(row.target)}`;
+  return FormatService.number(row.target);
+};
+
+const getDiffData = (row) => {
+  if (!row.target) return null;
+  let diff = 0;
+  let isPositive = false; // Is the difference "good" or "bad"
+
+  if (Array.isArray(row.target)) {
+    const [min, max] = row.target;
+    if (row.value < min) {
+      diff = row.value - min;
+    } else if (row.value > max) {
+      diff = row.value - max;
+    } else {
+      return null; // Inside target range
+    }
+  } else {
+    diff = row.value - row.target;
+  }
+
+  // Determine if the diff is "good" (green) or "bad" (red)
+  // For time (s, ms), smaller is better. For speed, power, cm, larger is better.
+  const smallerIsBetter = ['s', 's_target', 'ms', 'tau'].includes(row.unit || row.id);
+  isPositive = smallerIsBetter ? diff < 0 : diff > 0;
+
+  let formattedDiff = FormatService.diff(diff);
+  if (row.unit === 'ms') formattedDiff = (diff > 0 ? '+' : '') + Math.round(diff) + 'ms';
+  if (row.unit === 'cm') formattedDiff = (diff > 0 ? '+' : '') + diff.toFixed(1) + 'cm';
+
+  return { val: formattedDiff, isGood: isPositive };
+};
 
 onMounted(() => {
   loadInitialData();
