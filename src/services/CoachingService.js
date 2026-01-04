@@ -207,77 +207,113 @@ export class CoachingService {
 
     /**
      * Generates coaching advice.
+     * Modularized for better maintenance.
      */
     static generateAdvice(profile, metrics, athlete) {
-        const advice = [];
-        const strengths = [];
-        const weaknesses = [];
+        const context = { profile, metrics, athlete, advice: [], strengths: [], weaknesses: [] };
 
+        this._analyzeFVProfile(context);
+        this._analyzeVelocityReserve(context);
+        this._analyzeSSCEfficiency(context);
+        this._analyzeVerticalStiffness(context);
+        this._analyzeKinematicBalance(context);
+        this._analyzeFatigue(context);
+
+        return { 
+            advice: context.advice, 
+            strengths: context.strengths, 
+            weaknesses: context.weaknesses 
+        };
+    }
+
+    static _analyzeFVProfile(ctx) {
+        const { profile, athlete } = ctx;
+        const f0_rel = profile.f0;
         const vmax = profile.vmax;
-        const tau = profile.tau;
         const gender = athlete.gender || 'M';
 
-        // 1. Force-Velocity Profile
-        const f0_rel = PhysicsService.calculateF0(vmax, tau);
         if (f0_rel > ADVICE_THRESHOLDS.f0.high) {
-            strengths.push("Profil explosif : Excellente capacité de production de force horizontale initiale.");
-            if (vmax < ADVICE_THRESHOLDS.vmax.low) advice.push("Orientation Vitesse Max : Votre profil est 'Force-Dominant'. Privilégiez le sprint lancé.");
+            ctx.strengths.push("Profil explosif : Excellente capacité de production de force horizontale initiale.");
+            if (vmax < ADVICE_THRESHOLDS.vmax.low) {
+                ctx.advice.push("Orientation Vitesse Max : Votre profil est 'Force-Dominant'. Privilégiez le sprint lancé.");
+            }
         } else if (f0_rel < ADVICE_THRESHOLDS.f0.low) {
-            weaknesses.push("Déficit de puissance initiale : Capacité de projection horizontale limitée.");
-            advice.push("Développement de la Force Explosive : Travaillez la force maximale combinée à des départs avec charges.");
+            ctx.weaknesses.push("Déficit de puissance initiale : Capacité de projection horizontale limitée.");
+            ctx.advice.push("Développement de la Force Explosive : Travaillez la force maximale combinée à des départs avec charges.");
         }
+    }
 
-        // 2. Velocity Reserve Index (VRI)
-        if (metrics.pb_100m) {
-            const vAvg = 100 / metrics.pb_100m;
-            const vri = vmax / vAvg;
-            if (vri > ADVICE_THRESHOLDS.vri.high) {
-                weaknesses.push("Sous-exploitation de la Vmax : Écart trop important entre Vmax et chrono.");
-                advice.push("Priorité Endurance de Vitesse : Intégrez des répétitions de 80m-120m à haute intensité.");
-            } else if (vri < ADVICE_THRESHOLDS.vri.low && vri > 0) {
-                strengths.push("Efficacité temporelle : Optimisation remarquable de la Vmax sur la distance.");
-                advice.push("Élévation du Plafond : Progression via l'augmentation de la vitesse de pointe absolue.");
-            }
+    static _analyzeVelocityReserve(ctx) {
+        const { metrics, profile } = ctx;
+        if (!metrics.pb_100m) return;
+
+        const vAvg = 100 / metrics.pb_100m;
+        const vri = profile.vmax / vAvg;
+
+        if (vri > ADVICE_THRESHOLDS.vri.high) {
+            ctx.weaknesses.push("Sous-exploitation de la Vmax : Écart trop important entre Vmax et chrono.");
+            ctx.advice.push("Priorité Endurance de Vitesse : Intégrez des répétitions de 80m-120m à haute intensité.");
+        } else if (vri < ADVICE_THRESHOLDS.vri.low && vri > 0) {
+            ctx.strengths.push("Efficacité temporelle : Optimisation remarquable de la Vmax sur la distance.");
+            ctx.advice.push("Élévation du Plafond : Progression via l'augmentation de la vitesse de pointe absolue.");
         }
+    }
 
-        // 3. SSC Efficiency
+    static _analyzeSSCEfficiency(ctx) {
+        const { metrics } = ctx;
         const prestigeIndex = PhysicsService.calculatePrestigeIndex(metrics);
-        if (prestigeIndex > 0) {
-            if (prestigeIndex < ADVICE_THRESHOLDS.prestige.low) {
-                weaknesses.push("Déficit de réactivité (SSC lent).");
-                advice.push("Travail Pliométrique : Accentuez la pliométrie basse.");
-            } else if (prestigeIndex > ADVICE_THRESHOLDS.prestige.high) {
-                strengths.push("Réactivité élastique supérieure (SSC rapide).");
-            }
-        }
+        if (prestigeIndex <= 0) return;
 
-        // 4. Vertical Stiffness
-        if (metrics.contact_time_r || metrics.contact_time_l) {
-            const ct = (metrics.contact_time_r || metrics.contact_time_l) > 10 ? (metrics.contact_time_r || metrics.contact_time_l) : (metrics.contact_time_r || metrics.contact_time_l) * 1000;
-            const match = CONTACT_TIME_TARGETS[gender]?.find(t => ct >= t.min && ct <= t.max);
-            if (match) advice.push(`Analyse de l'appui : Votre temps de contact est '${match.label}'.`);
-            if (ct > ADVICE_THRESHOLDS.stiffness.high_ct && vmax > ADVICE_THRESHOLDS.stiffness.vmax_threshold) {
-                weaknesses.push("Temps de sol excessifs : Manque de raideur verticale.");
-                advice.push("Renforcement de la Stiffness : Intégrez des pogos et multibonds.");
-            } else if (ct < ADVICE_THRESHOLDS.stiffness.elite_ct) strengths.push("Stiffness verticale d'élite.");
+        if (prestigeIndex < ADVICE_THRESHOLDS.prestige.low) {
+            ctx.weaknesses.push("Déficit de réactivité (SSC lent).");
+            ctx.advice.push("Travail Pliométrique : Accentuez la pliométrie basse.");
+        } else if (prestigeIndex > ADVICE_THRESHOLDS.prestige.high) {
+            ctx.strengths.push("Réactivité élastique supérieure (SSC rapide).");
         }
+    }
 
-        // 5. Kinematic Balance
-        if (metrics.step_len_avg_r && vmax > 0) {
-            const freq = vmax / metrics.step_len_avg_r;
-            if (freq < ADVICE_THRESHOLDS.kinematic.freq_low_m && gender === 'M') advice.push("Optimisation Fréquence : Travail de vélocité gestuelle conseillé.");
-            else if (freq > ADVICE_THRESHOLDS.kinematic.freq_high) advice.push("Optimisation Amplitude : Travaillez la force de poussée horizontale.");
-            else if (freq >= ADVICE_THRESHOLDS.kinematic.freq_opt_min && freq <= ADVICE_THRESHOLDS.kinematic.freq_opt_max) strengths.push("Équilibre cinématique optimal.");
+    static _analyzeVerticalStiffness(ctx) {
+        const { metrics, profile, athlete } = ctx;
+        const gender = athlete.gender || 'M';
+        const raw_ct = metrics.contact_time_r || metrics.contact_time_l;
+        if (!raw_ct) return;
+
+        const ct = raw_ct > 10 ? raw_ct : raw_ct * 1000;
+        const match = CONTACT_TIME_TARGETS[gender]?.find(t => ct >= t.min && ct <= t.max);
+        
+        if (match) ctx.advice.push(`Analyse de l'appui : Votre temps de contact est '${match.label}'.`);
+        
+        if (ct > ADVICE_THRESHOLDS.stiffness.high_ct && profile.vmax > ADVICE_THRESHOLDS.stiffness.vmax_threshold) {
+            ctx.weaknesses.push("Temps de sol excessifs : Manque de raideur verticale.");
+            ctx.advice.push("Renforcement de la Stiffness : Intégrez des pogos et multibonds.");
+        } else if (ct < ADVICE_THRESHOLDS.stiffness.elite_ct) {
+            ctx.strengths.push("Stiffness verticale d'élite.");
         }
+    }
 
-        // 6. Fatigue Index
-        const fatigueIndex = PhysicsService.calculateFatigueIndex(metrics);
-        if (fatigueIndex > ADVICE_THRESHOLDS.fatigue.high) {
-            weaknesses.push("Décroissance de vitesse précoce.");
-            advice.push("Capacité Tampon : Intégrez des séances de résistance lactique.");
+    static _analyzeKinematicBalance(ctx) {
+        const { metrics, profile, athlete } = ctx;
+        if (!metrics.step_len_avg_r || profile.vmax <= 0) return;
+
+        const freq = profile.vmax / metrics.step_len_avg_r;
+        const gender = athlete.gender || 'M';
+        const thresholds = ADVICE_THRESHOLDS.kinematic.freq[gender];
+
+        if (freq < thresholds.low) {
+            ctx.advice.push("Optimisation Fréquence : Travail de vélocité gestuelle conseillé.");
+        } else if (freq > thresholds.high) {
+            ctx.advice.push("Optimisation Amplitude : Travaillez la force de poussée horizontale.");
+        } else if (freq >= thresholds.opt_min && freq <= thresholds.opt_max) {
+            ctx.strengths.push("Équilibre cinématique optimal.");
         }
+    }
 
-        return { advice, strengths, weaknesses };
+    static _analyzeFatigue(ctx) {
+        const { profile } = ctx;
+        if (profile.endurance > ADVICE_THRESHOLDS.fatigue.high) {
+            ctx.weaknesses.push("Décroissance de vitesse précoce.");
+            ctx.advice.push("Capacité Tampon : Intégrez des séances de résistance lactique.");
+        }
     }
 
     /**

@@ -86,20 +86,33 @@ export class RaceService {
 
     /**
      * Project Prediction Engine results onto specific segments
+     * Uses interpolation from engine's pre-calculated splits for maximum consistency.
      */
     static projectPredictionToSegments(prediction, segmentsTemplate, metric = 'speed', engine) {
-        if (!prediction || !prediction.profile) return null;
-        
-        const { vmax, tau, rt } = prediction.profile;
-        const scaleFactor = prediction.scaleFactor || 1.0;
+        if (!prediction || !prediction.profile || !prediction.splits) return null;
         
         const segments = segmentsTemplate.map(t => {
-            const tStartRaw = engine.calculateTimeAtDistance(t.start, vmax, tau);
-            const tEndRaw = engine.calculateTimeAtDistance(t.end, vmax, tau);
-            
-            let segmentTime = (tEndRaw - tStartRaw) * scaleFactor;
-            if (t.start === 0) segmentTime += (rt * scaleFactor);
+            // Find splits that bracket the segment boundaries
+            const getDistTime = (dist) => {
+                if (dist === 0) return 0;
+                // Find closest splits
+                const exact = prediction.splits.find(s => Math.abs(s.distance - dist) < 0.01);
+                if (exact) return exact.time;
 
+                const after = prediction.splits.find(s => s.distance > dist);
+                const before = [...prediction.splits].reverse().find(s => s.distance <= dist) || { distance: 0, time: 0 };
+                
+                if (!after) return prediction.time; // Finish line or beyond
+
+                // Linear interpolation between splits
+                const ratio = (dist - before.distance) / (after.distance - before.distance);
+                return before.time + ratio * (after.time - before.time);
+            };
+
+            const tStart = getDistTime(t.start);
+            const tEnd = getDistTime(t.end);
+            
+            const segmentTime = tEnd - tStart;
             const segmentDist = t.end - t.start;
             
             if (metric === 'speed') return segmentDist / segmentTime;
@@ -108,7 +121,7 @@ export class RaceService {
             // For frequency and step length, average of splits in range
             const splitsInRange = prediction.splits.filter(s => s.distance > t.start && s.distance <= t.end);
             if (splitsInRange.length > 0) {
-                return splitsInRange.reduce((acc, s) => acc + (s[metric] || 0), 0) / splitsInRange.length;
+                return splitsInRange.reduce((acc, s) => acc + (acc[metric] || 0), 0) / splitsInRange.length;
             }
             return 0;
         });

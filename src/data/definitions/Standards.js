@@ -270,7 +270,12 @@ export const PHYSICS_CONSTANTS = {
         U23: 1.14,
         ELITE: 1.14
     },
-    ACCEL_BONUS: 0.15
+    ACCEL_BONUS: 0.15,
+    PACING_400M: {
+        U16: 2.0,
+        U18: 1.5,
+        ELITE: 1.0
+    }
 };
 
 export const NORMALIZATION_RANGES = {
@@ -289,12 +294,13 @@ export const ADVICE_THRESHOLDS = {
     fatigue: { high: 1.28 },
     stiffness: { high_ct: 105, elite_ct: 90, vmax_threshold: 9.0 },
     kinematic: { 
-        freq_low_m: 3.8, 
-        freq_high: 4.8, 
-        freq_opt_min: 4.0, 
-        freq_opt_max: 4.6 
+        freq: {
+            M: { low: 3.8, high: 4.8, opt_min: 4.0, opt_max: 4.6 },
+            F: { low: 4.0, high: 5.1, opt_min: 4.2, opt_max: 4.9 }
+        }
     },
-    fv_ratio: { high: 1.15, low: 0.85 }
+    fv_ratio: { high: 1.15, low: 0.85 },
+    force_application: { high_rf: 0.48 } // RF max theoretical estimation
 };
 
 export const QUALITY_BENCHMARKS = {

@@ -185,7 +185,12 @@ export class PredictionEngine {
         }
 
         const predictedTime = (t200 * 2) + margin;
-        const pacing200 = t200 + 1.0;
+        
+        // Dynamic Pacing Margin (Time added to 200m PB for the 1st half of 400m)
+        let pacingMargin = PHYSICS_CONSTANTS.PACING_400M[athlete.category] || PHYSICS_CONSTANTS.PACING_400M.ELITE;
+        if (ifIndex > 1.25) pacingMargin += 0.5; // Extra caution for pure sprinters
+        
+        const pacing200 = t200 + pacingMargin;
         const splits = [
             { distance: 200, time: pacing200, segmentTime: pacing200, velocity: 200/pacing200 },
             { distance: 400, time: predictedTime, segmentTime: predictedTime - pacing200, velocity: 200/(predictedTime - pacing200) }
@@ -308,9 +313,11 @@ export class PredictionEngine {
         // 4. Sanity Checks (Literature boundaries)
         if (vmax > 12.6) warnings.push("Vmax exceptionnelle : Proche ou supérieure aux limites humaines (12.5 m/s).");
         if (tau < 0.70) warnings.push("Tau extrêmement bas : Accélération potentiellement surévaluée.");
+        
+        const f0 = PhysicsService.calculateF0(vmax, tau);
+        if (f0 > 13.5 && vmax < 9.5) warnings.push("Profil atypique : Accélération très forte par rapport à la Vmax (Risque d'erreur de mesure).");
 
         // 5. Complete Profile with Biomechanical Variables
-        const f0 = PhysicsService.calculateF0(vmax, tau);
         const pmax = PhysicsService.calculatePmax(vmax, tau);
         const endurance = PhysicsService.calculateFatigueIndex(metrics);
 
