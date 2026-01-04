@@ -252,6 +252,51 @@ export const CONTACT_TIME_TARGETS = {
  * v0: Theoretical max velocity (m/s)
  * contactTime: Target ground contact time range (ms)
  */
+
+/**
+ * Physics & Biomechanical Constants
+ * Used by the PredictionEngine to tune the models.
+ */
+export const PHYSICS_CONSTANTS = {
+    REACTION_TIME: {
+        OFFICIAL: 0.15,
+        TRAINING_U18: 0.16,
+        TRAINING_ELITE: 0.15
+    },
+    VMAX_ESTIMATION_COEFF: {
+        U16: 1.18,
+        U18: 1.16,
+        U20: 1.16,
+        U23: 1.14,
+        ELITE: 1.14
+    },
+    ACCEL_BONUS: 0.15
+};
+
+export const NORMALIZATION_RANGES = {
+    tau: { min: 1.5, max: 0.70 },
+    vmax: { min: 7.0, max: 12.5 },
+    pmax: { min: 10, max: 45 },
+    endurance: { min: 1.35, max: 1.05 },
+    reactivity: { min: 5, max: 25 }
+};
+
+export const ADVICE_THRESHOLDS = {
+    f0: { high: 11.5, low: 9.0 },
+    vmax: { low: 9.5 },
+    vri: { high: 1.22, low: 1.14 },
+    prestige: { low: 8, high: 15 },
+    fatigue: { high: 1.28 },
+    stiffness: { high_ct: 105, elite_ct: 90, vmax_threshold: 9.0 },
+    kinematic: { 
+        freq_low_m: 3.8, 
+        freq_high: 4.8, 
+        freq_opt_min: 4.0, 
+        freq_opt_max: 4.6 
+    },
+    fv_ratio: { high: 1.15, low: 0.85 }
+};
+
 export const QUALITY_BENCHMARKS = {
   M: {
     ELITE: { tau: 0.90, vmax: 11.6, f0: 12.9, v0: 12.2, pmax: 28, endurance: 1.10, reactivity: 15, contactTime: { min: 80, max: 90 } },

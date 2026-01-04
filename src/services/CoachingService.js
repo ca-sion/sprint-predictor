@@ -3,7 +3,7 @@
  * Handles the interpretation of physical data into actionable advice and analysis.
  * Purely numeric return values for the grid.
  */
-import { ATHLETICS_DATA, CONTACT_TIME_TARGETS, QUALITY_BENCHMARKS } from '../data/definitions/Standards.js';
+import { ATHLETICS_DATA, CONTACT_TIME_TARGETS, QUALITY_BENCHMARKS, NORMALIZATION_RANGES, ADVICE_THRESHOLDS } from '../data/definitions/Standards.js';
 import { PhysicsService } from './PhysicsService.js';
 
 export class CoachingService {
@@ -21,22 +21,11 @@ export class CoachingService {
 
     /**
      * Normalization engine: transforms raw physical values into 0-100 scores.
-     * Ranges expanded to prevent saturation at elite levels.
      */
     static normalizeQuality(key, val) {
-        switch (key) {
-            case 'tau':       // Explosivity (Time constant): 0.70s = 100, 1.5s = 0
-                return Math.max(0, Math.min(100, 100 * (1.5 - val) / (1.5 - 0.70)));
-            case 'vmax':      // Speed: 12.5m/s = 100, 7.0m/s = 0
-                return Math.max(0, Math.min(100, 100 * (val - 7.0) / (12.5 - 7.0)));
-            case 'pmax':      // Power: 45W/kg = 100, 10W/kg = 0
-                return Math.max(0, Math.min(100, 100 * (val - 10) / (45 - 10)));
-            case 'endurance': // Index: 1.05 = 100, 1.35 = 0
-                return Math.max(0, Math.min(100, 100 * (1.35 - val) / (1.35 - 1.05)));
-            case 'reactivity':// Prestige % (SSC): 25% = 100, 5% = 0
-                return Math.max(0, Math.min(100, 100 * (val - 5) / (25 - 5)));
-            default: return 50;
-        }
+        const range = NORMALIZATION_RANGES[key];
+        if (!range) return 50;
+        return Math.max(0, Math.min(100, 100 * (val - range.min) / (range.max - range.min)));
     }
 
     /**
@@ -230,10 +219,10 @@ export class CoachingService {
 
         // 1. Force-Velocity Profile
         const f0_rel = PhysicsService.calculateF0(vmax, tau);
-        if (f0_rel > 11.5) {
+        if (f0_rel > ADVICE_THRESHOLDS.f0.high) {
             strengths.push("Profil explosif : Excellente capacité de production de force horizontale initiale.");
-            if (vmax < 9.5) advice.push("Orientation Vitesse Max : Votre profil est 'Force-Dominant'. Privilégiez le sprint lancé.");
-        } else if (f0_rel < 9.0) {
+            if (vmax < ADVICE_THRESHOLDS.vmax.low) advice.push("Orientation Vitesse Max : Votre profil est 'Force-Dominant'. Privilégiez le sprint lancé.");
+        } else if (f0_rel < ADVICE_THRESHOLDS.f0.low) {
             weaknesses.push("Déficit de puissance initiale : Capacité de projection horizontale limitée.");
             advice.push("Développement de la Force Explosive : Travaillez la force maximale combinée à des départs avec charges.");
         }
@@ -242,10 +231,10 @@ export class CoachingService {
         if (metrics.pb_100m) {
             const vAvg = 100 / metrics.pb_100m;
             const vri = vmax / vAvg;
-            if (vri > 1.22) {
+            if (vri > ADVICE_THRESHOLDS.vri.high) {
                 weaknesses.push("Sous-exploitation de la Vmax : Écart trop important entre Vmax et chrono.");
                 advice.push("Priorité Endurance de Vitesse : Intégrez des répétitions de 80m-120m à haute intensité.");
-            } else if (vri < 1.14 && vri > 0) {
+            } else if (vri < ADVICE_THRESHOLDS.vri.low && vri > 0) {
                 strengths.push("Efficacité temporelle : Optimisation remarquable de la Vmax sur la distance.");
                 advice.push("Élévation du Plafond : Progression via l'augmentation de la vitesse de pointe absolue.");
             }
@@ -254,10 +243,10 @@ export class CoachingService {
         // 3. SSC Efficiency
         const prestigeIndex = PhysicsService.calculatePrestigeIndex(metrics);
         if (prestigeIndex > 0) {
-            if (prestigeIndex < 8) {
+            if (prestigeIndex < ADVICE_THRESHOLDS.prestige.low) {
                 weaknesses.push("Déficit de réactivité (SSC lent).");
                 advice.push("Travail Pliométrique : Accentuez la pliométrie basse.");
-            } else if (prestigeIndex > 15) {
+            } else if (prestigeIndex > ADVICE_THRESHOLDS.prestige.high) {
                 strengths.push("Réactivité élastique supérieure (SSC rapide).");
             }
         }
@@ -267,23 +256,23 @@ export class CoachingService {
             const ct = (metrics.contact_time_r || metrics.contact_time_l) > 10 ? (metrics.contact_time_r || metrics.contact_time_l) : (metrics.contact_time_r || metrics.contact_time_l) * 1000;
             const match = CONTACT_TIME_TARGETS[gender]?.find(t => ct >= t.min && ct <= t.max);
             if (match) advice.push(`Analyse de l'appui : Votre temps de contact est '${match.label}'.`);
-            if (ct > 105 && vmax > 9.0) {
+            if (ct > ADVICE_THRESHOLDS.stiffness.high_ct && vmax > ADVICE_THRESHOLDS.stiffness.vmax_threshold) {
                 weaknesses.push("Temps de sol excessifs : Manque de raideur verticale.");
                 advice.push("Renforcement de la Stiffness : Intégrez des pogos et multibonds.");
-            } else if (ct < 90) strengths.push("Stiffness verticale d'élite.");
+            } else if (ct < ADVICE_THRESHOLDS.stiffness.elite_ct) strengths.push("Stiffness verticale d'élite.");
         }
 
         // 5. Kinematic Balance
         if (metrics.step_len_avg_r && vmax > 0) {
             const freq = vmax / metrics.step_len_avg_r;
-            if (freq < 3.8 && gender === 'M') advice.push("Optimisation Fréquence : Travail de vélocité gestuelle conseillé.");
-            else if (freq > 4.8) advice.push("Optimisation Amplitude : Travaillez la force de poussée horizontale.");
-            else if (freq >= 4.0 && freq <= 4.6) strengths.push("Équilibre cinématique optimal.");
+            if (freq < ADVICE_THRESHOLDS.kinematic.freq_low_m && gender === 'M') advice.push("Optimisation Fréquence : Travail de vélocité gestuelle conseillé.");
+            else if (freq > ADVICE_THRESHOLDS.kinematic.freq_high) advice.push("Optimisation Amplitude : Travaillez la force de poussée horizontale.");
+            else if (freq >= ADVICE_THRESHOLDS.kinematic.freq_opt_min && freq <= ADVICE_THRESHOLDS.kinematic.freq_opt_max) strengths.push("Équilibre cinématique optimal.");
         }
 
         // 6. Fatigue Index
         const fatigueIndex = PhysicsService.calculateFatigueIndex(metrics);
-        if (fatigueIndex > 1.28) {
+        if (fatigueIndex > ADVICE_THRESHOLDS.fatigue.high) {
             weaknesses.push("Décroissance de vitesse précoce.");
             advice.push("Capacité Tampon : Intégrez des séances de résistance lactique.");
         }
@@ -384,14 +373,14 @@ export class CoachingService {
         if (!physics) return null;
         const ratio = physics.f0 / physics.vmax; 
 
-        if (ratio > 1.15) {
+        if (ratio > ADVICE_THRESHOLDS.fv_ratio.high) {
             return {
                 label: "Force-Dominant",
                 color: "text-blue-400",
                 description: "Forte capacité d'accélération initiale mais plafond de vitesse atteint rapidement.",
                 advice: "Priorité : Sprint lancé, survitesse et travail de fréquence gestuelle."
             };
-        } else if (ratio < 0.85) {
+        } else if (ratio < ADVICE_THRESHOLDS.fv_ratio.low) {
             return {
                 label: "Velocity-Dominant",
                 color: "text-emerald-400",

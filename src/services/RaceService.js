@@ -90,7 +90,7 @@ export class RaceService {
     static projectPredictionToSegments(prediction, segmentsTemplate, metric = 'speed', engine) {
         if (!prediction || !prediction.profile) return null;
         
-        const { vmax, tau } = prediction.profile;
+        const { vmax, tau, rt } = prediction.profile;
         const scaleFactor = prediction.scaleFactor || 1.0;
         
         const segments = segmentsTemplate.map(t => {
@@ -98,7 +98,7 @@ export class RaceService {
             const tEndRaw = engine.calculateTimeAtDistance(t.end, vmax, tau);
             
             let segmentTime = (tEndRaw - tStartRaw) * scaleFactor;
-            if (t.start === 0) segmentTime += (engine.CONSTANTS.REACTION_TIME * scaleFactor);
+            if (t.start === 0) segmentTime += (rt * scaleFactor);
 
             const segmentDist = t.end - t.start;
             

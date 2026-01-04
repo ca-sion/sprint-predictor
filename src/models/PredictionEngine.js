@@ -5,13 +5,14 @@
  * Driven by DISCIPLINES configuration.
  */
 import { DISCIPLINES, DISCIPLINE_TYPES } from '../data/definitions/Disciplines.js';
+import { QUALITY_BENCHMARKS, PHYSICS_CONSTANTS } from '../data/definitions/Standards.js';
+import { PhysicsService } from '../services/PhysicsService.js';
 
 export class PredictionEngine {
     constructor() {
         this.CONSTANTS = {
-            REACTION_TIME: 0.15, 
-            ACCEL_TAU_DEFAULT: 0.9, 
-            VMAX_DEFAULT: 9.0, 
+            // Default fallback if athlete info is missing
+            DEFAULT_RT: PHYSICS_CONSTANTS.REACTION_TIME.OFFICIAL 
         };
     }
 
@@ -22,8 +23,7 @@ export class PredictionEngine {
         const config = DISCIPLINES[targetEvent];
         if (!config) throw new Error(`Discipline ${targetEvent} non supportée.`);
 
-        const metrics = athlete.metrics;
-        const profile = this.calculateProfile(metrics);
+        const profile = this.calculateProfile(athlete);
         
         let result = {
             time: 0,
@@ -64,11 +64,11 @@ export class PredictionEngine {
      * Physics-based prediction for flat sprints (50m, 60m, 100m)
      */
     predictFlat(profile, config, athlete) {
-        const { vmax, tau } = profile;
+        const { vmax, tau, rt } = profile;
         const { distance, params } = config;
         
         const rawTime = this.calculateTimeAtDistance(distance, vmax, tau);
-        let physicsTime = rawTime + this.CONSTANTS.REACTION_TIME;
+        let physicsTime = rawTime + rt;
         
         let flyTime = null;
         let flySource = '';
@@ -94,12 +94,12 @@ export class PredictionEngine {
         // Model B: Mero Power Law (if ratio defined)
         let meroTime = null;
         if (params.meroRatio) {
-            let t60 = metrics.pb_60m || (this.calculateTimeAtDistance(60, vmax, tau) + this.CONSTANTS.REACTION_TIME);
+            let t60 = metrics.pb_60m || (this.calculateTimeAtDistance(60, vmax, tau) + rt);
             meroTime = t60 * params.meroRatio;
         }
 
         // Model C: Acceleration Bonus
-        let accelBonus = (params.accelBonusThreshold && metrics.test_30m_block && metrics.test_30m_block < params.accelBonusThreshold) ? 0.15 : 0;
+        let accelBonus = (params.accelBonusThreshold && metrics.test_30m_block && metrics.test_30m_block < params.accelBonusThreshold) ? PHYSICS_CONSTANTS.ACCEL_BONUS : 0;
 
         let finalTime = physicsTime;
         let usedMethod = 'Modèle Physique';
@@ -126,7 +126,7 @@ export class PredictionEngine {
             usedMethod = "Moyenne (Potentiel vs Réalisé)";
         }
 
-        const splits = this.generateSplits(finalTime, physicsTime, distance, vmax, tau, metrics.step_len_avg_r || 2.0);
+        const splits = this.generateSplits(finalTime, physicsTime, distance, profile, metrics.step_len_avg_r || 2.0);
 
         return { time: finalTime, range: 0.10, splits, scaleFactor: finalTime / physicsTime, tags: [usedMethod] };
     }
@@ -141,7 +141,7 @@ export class PredictionEngine {
         let delta = params.deltas.neutral; 
         let bias = "Neutre";
         
-        const ifIndex = this.calculateFatigueIndex(athlete.metrics);
+        const ifIndex = profile.endurance;
         if (ifIndex > params.fatigueIndexThresholds.speed) { 
             delta = params.deltas.speed; 
             bias = "Speed-Biased"; 
@@ -175,7 +175,7 @@ export class PredictionEngine {
     predictLongSprint(profile, config, athlete) {
         const { params } = config;
         let t200 = athlete.metrics.pb_200m || parseFloat(this.predictFlatLong(profile, DISCIPLINES['200m'], athlete).time);
-        const ifIndex = this.calculateFatigueIndex(athlete.metrics);
+        const ifIndex = profile.endurance;
         
         let margin = params.margins.default;
         if (ifIndex > params.fatigueIndexThresholds.sprinter) {
@@ -236,17 +236,21 @@ export class PredictionEngine {
     /**
      * Helper to generate standardized splits
      */
-    generateSplits(finalTime, physicsTime, distance, vmax, tau, baseStepLen) {
+    generateSplits(finalTime, physicsTime, distance, profile, baseStepLen) {
+        const { vmax, tau, rt } = profile;
         const splits = [];
         const scaleFactor = finalTime / physicsTime; 
-        let prevTime = this.CONSTANTS.REACTION_TIME * scaleFactor;
+        let prevTime = rt * scaleFactor;
         const res = distance <= 110 ? 5 : 10;
 
         for(let d=res; d<=distance; d+=res) {
-            const st = (this.calculateTimeAtDistance(d, vmax, tau) + this.CONSTANTS.REACTION_TIME) * scaleFactor;
+            const st = (this.calculateTimeAtDistance(d, vmax, tau) + rt) * scaleFactor;
             const segmentTime = st - prevTime;
             const velocity = res / segmentTime;
-            const theoreticalSL = baseStepLen * (0.85 + 0.15 * (velocity / vmax));
+            
+            // Biomechanical refinement: SL is shorter during pure acceleration (f0 influence)
+            // and stabilizes at top speed.
+            const theoreticalSL = baseStepLen * (0.82 + 0.18 * (velocity / vmax));
             const theoreticalFreq = velocity / theoreticalSL;
 
             splits.push({ distance: d, time: st, segmentTime, velocity, frequency: theoreticalFreq, stepLength: theoreticalSL });
@@ -256,30 +260,70 @@ export class PredictionEngine {
     }
 
     /**
-     * Core Profile Calculation (unchanged physical logic)
+     * Core Profile Calculation
+     * Uses benchmarks as fallbacks and integrates real measurements.
+     * Enriches the profile with F0 and Endurance for downstream services.
      */
-    calculateProfile(metrics) {
-        let vmax = this.CONSTANTS.VMAX_DEFAULT;
-        let tau = this.CONSTANTS.ACCEL_TAU_DEFAULT;
-        let sources = [];
+    calculateProfile(athlete) {
+        const metrics = athlete.metrics;
+        const gender = athlete.gender || 'M';
+        const cat = athlete.category || 'ELITE';
+        
+        // 1. Base from Benchmarks (Scientific Fallbacks)
+        const benchmark = QUALITY_BENCHMARKS[gender]?.[cat] || QUALITY_BENCHMARKS[gender]?.['ELITE'];
+        
+        let vmax = benchmark.vmax;
+        let tau = benchmark.tau;
+        let sources = ["Standards de catégorie"];
         let warnings = [];
 
+        // 2. Refine Vmax (Priority: measured tests > PB estimation)
         let vmaxSources = [];
         if (metrics.test_30m_fly) vmaxSources.push({ val: 30 / metrics.test_30m_fly, type: '30m Fly' });
         if (metrics.test_20m_fly) vmaxSources.push({ val: 20 / metrics.test_20m_fly, type: '20m Fly' });
-        if (metrics.pb_100m) vmaxSources.push({ val: (100 / metrics.pb_100m) * 1.16, type: 'Est. from 100m PB' });
+        
+        if (metrics.pb_100m) {
+            const coeff = PHYSICS_CONSTANTS.VMAX_ESTIMATION_COEFF[cat] || PHYSICS_CONSTANTS.VMAX_ESTIMATION_COEFF.ELITE;
+            vmaxSources.push({ val: (100 / metrics.pb_100m) * coeff, type: 'Est. PB 100m' });
+        }
 
         if (vmaxSources.length > 0) {
             const measured = vmaxSources.filter(s => s.type.includes('Fly'));
             const best = measured.length > 0 ? measured.reduce((prev, curr) => (prev.val > curr.val) ? prev : curr) : vmaxSources[0];
             vmax = best.val;
-            sources.push(best.type);
+            sources = [best.type];
         }
 
-        if (metrics.test_30m_block) tau = this.solveTau(30, metrics.test_30m_block - this.CONSTANTS.REACTION_TIME, vmax);
-        else if (metrics.pb_60m) tau = this.solveTau(60, metrics.pb_60m - this.CONSTANTS.REACTION_TIME, vmax);
+        // 3. Refine Tau (Priority: block tests > PB estimation)
+        const rt = (cat === 'U16' || cat === 'U18') ? PHYSICS_CONSTANTS.REACTION_TIME.TRAINING_U18 : PHYSICS_CONSTANTS.REACTION_TIME.TRAINING_ELITE;
 
-        return { vmax, tau, sources, warnings };
+        if (metrics.test_30m_block) {
+            tau = this.solveTau(30, metrics.test_30m_block - rt, vmax);
+            sources.push("Test 30m Block");
+        } else if (metrics.pb_60m) {
+            tau = this.solveTau(60, metrics.pb_60m - rt, vmax);
+            sources.push("PB 60m");
+        }
+
+        // 4. Sanity Checks (Literature boundaries)
+        if (vmax > 12.6) warnings.push("Vmax exceptionnelle : Proche ou supérieure aux limites humaines (12.5 m/s).");
+        if (tau < 0.70) warnings.push("Tau extrêmement bas : Accélération potentiellement surévaluée.");
+
+        // 5. Complete Profile with Biomechanical Variables
+        const f0 = PhysicsService.calculateF0(vmax, tau);
+        const pmax = PhysicsService.calculatePmax(vmax, tau);
+        const endurance = PhysicsService.calculateFatigueIndex(metrics);
+
+        return { 
+            vmax, 
+            tau, 
+            rt,
+            f0, 
+            pmax, 
+            endurance,
+            sources, 
+            warnings 
+        };
     }
 
     solveTau(d, t, vmax) {
@@ -306,12 +350,5 @@ export class PredictionEngine {
             t = t - f/df;
         }
         return t;
-    }
-
-    calculateFatigueIndex(metrics) {
-        if (!metrics.test_30m_fly) return 0;
-        let tLong = metrics.test_120m || metrics.test_80m || metrics.test_60m || 0;
-        let dLong = metrics.test_120m ? 120 : metrics.test_80m ? 80 : metrics.test_60m ? 60 : 0;
-        return (tLong > 0) ? (30 / metrics.test_30m_fly) / (dLong / tLong) : 0;
     }
 }
