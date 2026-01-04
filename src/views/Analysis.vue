@@ -221,11 +221,11 @@
                   </tr>
                 </thead>
                 <tbody class="font-mono text-slate-700 divide-y divide-slate-100">
-                  <tr v-for="split in prediction.splits" :key="split.distance" class="hover:bg-slate-50 transition-colors">
-                    <td class="px-4 py-2.5 font-medium text-slate-600 text-xs">{{ split.distance }}m</td>
-                    <td class="px-4 py-2.5 text-slate-900 font-bold">{{ split.time.toFixed(2) }}</td>
-                    <td class="px-4 py-2.5 text-blue-600 font-mono text-xs">{{ split.segmentTime.toFixed(2) }}</td>
-                    <td class="px-4 py-2.5 text-slate-400 text-[10px]">{{ split.velocity.toFixed(2) }}</td>
+                  <tr v-for="split in analysisSplits" :key="split.distance" class="hover:bg-slate-50 transition-colors">
+                    <td class="px-4 py-2.5 font-medium text-slate-600 text-xs">{{ split.label }}</td>
+                    <td class="px-4 py-2.5 text-slate-900 font-bold">{{ split.time.toFixed(2) }}s</td>
+                    <td class="px-4 py-2.5 text-blue-600 font-mono text-xs">{{ split.distance }}</td>
+                    <td class="px-4 py-2.5 text-slate-400 text-[10px]">{{ split.velocity.toFixed(2) }} m/s</td>
                   </tr>
                 </tbody>
               </table>
@@ -318,9 +318,11 @@ import { Athlete } from '../models/Athlete.js';
 import { PredictionEngine } from '../models/PredictionEngine.js';
 import { StorageManager } from '../models/StorageManager.js';
 import { CoachingService } from '../services/CoachingService.js';
+import { RaceService } from '../services/RaceService.js';
 import { INPUT_GROUPS } from '../data/definitions/FormConfig.js';
 import { ATHLETICS_DATA } from '../data/definitions/Standards.js';
 import { GLOSSARY, BIBLIOGRAPHY } from '../data/definitions/Glossary.js';
+import { getDynamicAnalysisTemplate } from '../data/definitions/Disciplines.js';
 
 const athlete = ref(new Athlete());
 const engine = new PredictionEngine();
@@ -331,6 +333,25 @@ const analysis = ref(null);
 const inputGroups = INPUT_GROUPS;
 const openGroups = ref([false, false, false, false]);
 const bibliography = BIBLIOGRAPHY;
+
+const analysisSplits = computed(() => {
+  if (!prediction.value) return [];
+  const template = getDynamicAnalysisTemplate(targetEvent.value, athlete.value.gender, athlete.value.category);
+  const projected = RaceService.projectPredictionToSegments(prediction.value, template, 'speed', engine);
+  if (!projected) return [];
+  
+  // Return segments with their time and speed
+  return template.map((t, idx) => {
+    // We need to get the time for the segment too
+    const timeProjected = RaceService.projectPredictionToSegments(prediction.value, [t], 'time', engine);
+    return {
+      label: t.label,
+      distance: `${t.start}-${t.end}m`,
+      time: timeProjected.segments[0],
+      velocity: projected.segments[idx]
+    };
+  });
+});
 
 const standardsChartCanvas = ref(null);
 const velocityChartCanvas = ref(null);

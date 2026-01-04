@@ -127,6 +127,16 @@
               <span class="text-[10px] font-black text-slate-600 w-6">{{ sensitivity }}%</span>
             </div>
           </div>
+
+          <div class="flex items-center gap-3 border-l border-slate-200 pl-6 ml-2">
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Comparer :</span>
+            <select v-model="comparisonRaceId" class="bg-slate-100 border-none rounded-lg px-3 py-1.5 text-[10px] font-black uppercase text-slate-700 focus:ring-2 focus:ring-blue-500/20 outline-none cursor-pointer">
+              <option :value="null">Record Virtuel (VB)</option>
+              <option v-for="race in filteredRaces" :key="race.id" :value="race.id">
+                {{ formatDate(race.date) }} - {{ race.name || race.discipline }}
+              </option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -356,6 +366,7 @@ import { Athlete } from '../models/Athlete.js';
 import { StorageManager } from '../models/StorageManager.js';
 import { PredictionEngine } from '../models/PredictionEngine.js';
 import { RaceService } from '../services/RaceService.js';
+import { FormatService } from '../services/FormatService.js';
 import { getDynamicAnalysisTemplate } from '../data/definitions/Disciplines.js';
 
 const athlete = ref(null);
@@ -365,6 +376,7 @@ const activeMetric = ref('speed');
 const activeTheme = ref('indigo');
 const sensitivity = ref(10);
 const layoutMode = ref('timeline');
+const comparisonRaceId = ref(null); // The "Ghost" race to compare against
 
 const THEME_LABELS = {
   indigo: 'Intensité',
@@ -455,7 +467,20 @@ const virtualBestRow = computed(() => {
   return RaceService.calculateVirtualBest(filteredRaces.value, templateSegments.value, activeMetric.value);
 });
 
-const virtualBestSegments = computed(() => virtualBestRow.value?.segments || []);
+const comparisonRow = computed(() => {
+  if (!comparisonRaceId.value) return virtualBestRow.value;
+  const race = filteredRaces.value.find(r => r.id === comparisonRaceId.value);
+  if (!race) return virtualBestRow.value;
+  
+  const raceInstance = race instanceof Race ? race : new Race(race);
+  const segments = raceInstance.calculateIntervals(templateSegments.value).map(s => s[activeMetric.value]);
+  return {
+    totalTime: RaceService.getRaceTotalTime(race),
+    segments
+  };
+});
+
+const virtualBestSegments = computed(() => comparisonRow.value?.segments || []);
 
 const getPbLinearMarkers = () => {
   if (!pbRace.value) return [];
@@ -483,10 +508,11 @@ const renderComparisonChart = () => {
   
   const labels = templateSegments.value.map(s => s.label);
   const theoryData = potentialRow.value?.segments || [];
-  const vbData = virtualBestRow.value?.segments || [];
+  const comparisonData = comparisonRow.value?.segments || [];
   const pbData = pbRow.value?.segments || [];
   
   const currentMetric = metrics.find(m => m.id === activeMetric.value);
+  const isGhost = !!comparisonRaceId.value;
 
   // Find peak theory point for highlighting
   let peakIdx = -1;
@@ -525,14 +551,14 @@ const renderComparisonChart = () => {
           zIndex: 2
         },
         {
-          label: `Record virtuel (VB)`,
-          data: vbData,
-          borderColor: '#2563eb',
-          backgroundColor: 'rgba(37, 99, 235, 0.1)',
+          label: isGhost ? 'Course Ghost' : 'Record virtuel (VB)',
+          data: comparisonData,
+          borderColor: isGhost ? '#8b5cf6' : '#2563eb', // Purple if Ghost, Blue if VB
+          backgroundColor: isGhost ? 'rgba(139, 92, 246, 0.1)' : 'rgba(37, 99, 235, 0.1)',
           fill: true,
           tension: 0.4,
           pointRadius: 4,
-          pointBackgroundColor: '#2563eb',
+          pointBackgroundColor: isGhost ? '#8b5cf6' : '#2563eb',
           zIndex: 0
         }
       ]
@@ -649,9 +675,13 @@ const getRaceTotalTime = (race) => {
     return RaceService.getRaceTotalTime(race);
 };
 
-const formatValue = (v) => typeof v === 'number' ? v.toFixed(2) : '-';
-const formatDiff = (v) => typeof v === 'number' ? (v > 0 ? '+' : '') + v.toFixed(2) : '-';
-const formatMetricValue = (val) => (val === undefined || val === null || val === 0) ? '-' : val.toFixed(2);
+const formatValue = (v) => FormatService.number(v);
+const formatDiff = (v) => FormatService.diff(v);
+const formatMetricValue = (val) => {
+    if (activeMetric.value === 'speed') return FormatService.number(val); // Keep numbers in grid
+    if (activeMetric.value === 'time') return FormatService.number(val, 3);
+    return FormatService.number(val);
+};
 
 const getGridCellStyles = (race, index) => {
   const seg = getRaceSegmentData(race, index);
@@ -661,7 +691,7 @@ const getGridCellStyles = (race, index) => {
 
 const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString('fr-CH', { day: 'numeric', month: 'short' });
 
-watch([selectedDiscipline, activeMetric, athlete], runAnalysis);
+watch([selectedDiscipline, activeMetric, athlete, comparisonRaceId], runAnalysis);
 
 onMounted(() => {
   const athleteId = StorageManager.getCurrentAthleteId();
