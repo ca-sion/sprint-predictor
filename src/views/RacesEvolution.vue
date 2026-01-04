@@ -568,13 +568,11 @@ const renderComparisonChart = () => {
       maintainAspectRatio: false,
       plugins: { 
         legend: { display: false },
-        tooltip: {
+        tooltip: FormatService.chartTooltipConfig({
             mode: 'index',
             intersect: false,
-            callbacks: {
-                label: (context) => `${context.dataset.label}: ${context.raw.toFixed(2)}${currentMetric.unit}`
-            }
-        }
+            label: (context) => `${context.dataset.label}: ${FormatService.number(context.raw)}${currentMetric.unit}`
+        })
       },
       scales: {
         y: { 

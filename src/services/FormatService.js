@@ -52,4 +52,21 @@ export class FormatService {
         if (val === undefined || val === null || val === 0) return '-';
         return val.toFixed(decimals);
     }
+
+    /**
+     * Standard Chart.js Tooltip Configuration
+     */
+    static chartTooltipConfig(callbacks = {}) {
+        return {
+            backgroundColor: '#1e293b', // slate-800
+            titleFont: { size: 12, weight: 'bold' },
+            bodyFont: { size: 11 },
+            padding: 10,
+            cornerRadius: 8,
+            displayColors: true,
+            borderColor: 'rgba(255,255,255,0.1)',
+            borderWidth: 1,
+            callbacks
+        };
+    }
 }

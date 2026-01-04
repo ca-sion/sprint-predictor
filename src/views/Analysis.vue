@@ -169,11 +169,11 @@
             :class="getStatusClasses(row.status)">
             <div>
               <div class="flex justify-between items-start mb-1">
-                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center">
+                <div class="text-[10px] font-bold text-slate-400 uppercase flex items-center">
                   {{ row.label }}
                   <div v-if="getGlossaryTerm(row.label)" class="group relative inline-block ml-1">
                     <svg class="w-3 h-3 text-slate-300 cursor-help hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    <div class="invisible group-hover:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800 text-white text-[10px] rounded-lg shadow-xl w-48 z-50 pointer-events-none leading-relaxed font-normal">
+                    <div class="invisible group-hover:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800 text-white text-xs rounded-lg shadow-xl w-48 z-50 pointer-events-none normal-case font-normal">
                         <span class="font-bold block mb-1">{{ getGlossaryTerm(row.label).term }}</span>
                         {{ getGlossaryTerm(row.label).def }}
                         <svg class="absolute text-slate-800 h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255"><polygon class="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
@@ -561,16 +561,9 @@ const renderStandardsChart = () => {
       },
       plugins: { 
           legend: { position: 'bottom', labels: { boxWidth: 8, font: { size: 10 }, usePointStyle: true } },
-          tooltip: {
-                backgroundColor: "#ffffff",
-                titleColor: "#1e293b",
-                bodyColor: "#475569",
-                borderColor: "#e2e8f0",
-                borderWidth: 1,
-                callbacks: {
-                  label: (ctx) => `${ctx.dataset.label}: ${ctx.raw}s`,
-                },
-          }
+          tooltip: FormatService.chartTooltipConfig({
+                label: (ctx) => `${ctx.dataset.label}: ${FormatService.number(ctx.raw)}s`,
+          })
       }
     }
   });
@@ -595,7 +588,7 @@ const renderRadarChart = () => {
           backgroundColor: 'rgba(37, 99, 235, 0.25)',
           borderColor: '#2563eb',
           borderWidth: 3,
-          pointBackgroundColor: '#2563eb',
+          pointBackgroundColor: (ctx) => data.scores[ctx.dataIndex].isMissing ? '#94a3b8' : '#2563eb',
           pointBorderColor: '#fff',
           pointRadius: 4,
           zIndex: 10
@@ -636,11 +629,13 @@ const renderRadarChart = () => {
           position: 'bottom',
           labels: { boxWidth: 12, font: { size: 10 } }
         },
-        tooltip: {
-          callbacks: {
-            label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(0)}/100`
+        tooltip: FormatService.chartTooltipConfig({
+          label: (ctx) => {
+            const q = data.scores[ctx.dataIndex];
+            const status = q.isMissing ? ' (Donnée estimée)' : '';
+            return `${ctx.dataset.label}: ${ctx.raw.toFixed(0)}/100${status}`;
           }
-        }
+        })
       }
     }
   });
@@ -723,12 +718,9 @@ const renderFVProfileChart = () => {
       },
       plugins: {
         legend: { display: false },
-        tooltip: {
-          backgroundColor: '#1e293b',
-          callbacks: {
-            label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(2)}`
-          }
-        }
+        tooltip: FormatService.chartTooltipConfig({
+          label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(2)}`
+        })
       }
     }
   });

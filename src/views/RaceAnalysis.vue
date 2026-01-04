@@ -188,7 +188,7 @@
               <!-- Performance Dashboard (Advanced Analysis) -->
               <div v-if="customIntervals.length > 0" class="mb-12">
                 <h4 class="text-sm font-bold text-slate-900 uppercase tracking-widest mb-4 flex items-center">
-                  <span class="mr-2">📊</span> Tableau de Bord de Performance
+                  <span class="mr-2">📊</span> Analyse Temporelle (Splits)
                 </h4>
                 
                 <div class="overflow-hidden border border-slate-100 rounded-2xl shadow-sm bg-white">
@@ -292,7 +292,9 @@
 
               <!-- Metrics Summary (Primitive Segments) -->
               <div v-if="segmentSpeeds.length > 0">
-                <h4 class="text-sm font-bold text-slate-900 uppercase tracking-widest mb-4">Détail technique par segment</h4>
+                <h4 class="text-sm font-bold text-slate-900 uppercase tracking-widest mb-4 flex items-center">
+                  <span class="mr-2">📐</span> Analyse Biomécanique (Segments)
+                </h4>
                 
                 <!-- Steps Input Section -->
                 <div class="bg-slate-50 border border-slate-100 rounded-2xl p-5 mb-6">

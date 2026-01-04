@@ -324,11 +324,11 @@ export class CoachingService {
         const prestige = PhysicsService.calculatePrestigeIndex(metrics);
 
         const scores = [
-            { label: 'Explosivité', score: this.normalizeQuality('tau', physics.tau) },
-            { label: 'Vitesse Max', score: this.normalizeQuality('vmax', physics.vmax) },
-            { label: 'Endurance',   score: this.normalizeQuality('endurance', fatigueIndex || 1.25) },
-            { label: 'Réactivité',  score: this.normalizeQuality('reactivity', prestige || 5) },
-            { label: 'Puissance',   score: this.normalizeQuality('pmax', physics.pmax) }
+            { label: 'Explosivité', score: this.normalizeQuality('tau', physics.tau), isMissing: !metrics.test_30m_block && !metrics.pb_60m },
+            { label: 'Vitesse Max', score: this.normalizeQuality('vmax', physics.vmax), isMissing: !metrics.test_30m_fly && !metrics.test_20m_fly },
+            { label: 'Endurance',   score: this.normalizeQuality('endurance', fatigueIndex || 1.25), isMissing: !fatigueIndex },
+            { label: 'Réactivité',  score: this.normalizeQuality('reactivity', prestige || 5), isMissing: !metrics.cmj_height || !metrics.sj_height },
+            { label: 'Puissance',   score: this.normalizeQuality('pmax', physics.pmax), isMissing: !physics.tau }
         ];
 
         // 2. Category Benchmarks
