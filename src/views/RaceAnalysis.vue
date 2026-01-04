@@ -254,7 +254,7 @@
                         <div class="flex items-center gap-3">
                           <input 
                             type="number" 
-                            v-model.number="activeRace.stepCounts[seg.label === 'Start - H1' ? `0-${seg.distance}` : `${seg.distance_start}-${seg.distance_end}` || seg.label]" 
+                            v-model.number="activeRace.stepCounts[seg.id]" 
                             @blur="saveActiveRace"
                             placeholder="---"
                             class="w-16 bg-white/10 border-none rounded-lg p-1.5 text-center text-sm font-bold focus:ring-2 focus:ring-blue-500 text-white"

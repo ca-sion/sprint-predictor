@@ -376,20 +376,19 @@ const bibliography = BIBLIOGRAPHY;
 const analysisSplits = computed(() => {
   if (!prediction.value) return [];
   const template = getDynamicAnalysisTemplate(targetEvent.value, athlete.value.gender, athlete.value.category);
-  const projected = RaceService.projectPredictionToSegments(prediction.value, template, 'speed', engine);
-  if (!projected) return [];
   
-  // Return segments with their time and speed
-  return template.map((t, idx) => {
-    // We need to get the time for the segment too
-    const timeProjected = RaceService.projectPredictionToSegments(prediction.value, [t], 'time', engine);
-    return {
-      label: t.label,
-      distance: `${t.start}-${t.end}m`,
-      time: timeProjected.segments[0],
-      velocity: projected.segments[idx]
-    };
-  });
+  // Bulk projection for both speed and time
+  const speedProjected = RaceService.projectPredictionToSegments(prediction.value, template, 'speed', engine);
+  const timeProjected = RaceService.projectPredictionToSegments(prediction.value, template, 'time', engine);
+  
+  if (!speedProjected || !timeProjected) return [];
+  
+  return template.map((t, idx) => ({
+    label: t.label,
+    distance: `${t.start}-${t.end}m`,
+    time: timeProjected.segments[idx],
+    velocity: speedProjected.segments[idx]
+  }));
 });
 
 const standardsChartCanvas = ref(null);

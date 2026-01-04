@@ -116,14 +116,16 @@ export class Race {
             const h1 = touchdowns[0];
             const t = h1.time - start.time;
             const d = h1.distance - start.distance;
+            const segmentId = `0-${h1.distance}`;
             results.push({
+                id: segmentId,
                 label: 'Start - H1',
                 time: t,
                 distance: d,
                 distance_start: 0,
                 distance_end: h1.distance,
                 speed: d / t,
-                steps: this.stepCounts[`0-${h1.distance}`] || 0
+                steps: this.stepCounts[segmentId] || 0
             });
         }
 
@@ -136,6 +138,7 @@ export class Race {
             const segmentId = `${m1.distance}-${m2.distance}`;
             
             results.push({
+                id: segmentId,
                 label: `H${i} - H${i+1}`,
                 time: t,
                 distance: d,
@@ -152,14 +155,16 @@ export class Race {
             if (finish.distance > lastH.distance) {
                 const t = finish.time - lastH.time;
                 const d = finish.distance - lastH.distance;
+                const segmentId = `${lastH.distance}-${finish.distance}`;
                 results.push({
+                    id: segmentId,
                     label: `H${touchdowns.length} - Finish`,
                     time: t,
                     distance: d,
                     distance_start: lastH.distance,
                     distance_end: finish.distance,
                     speed: d / t,
-                    steps: this.stepCounts[`${lastH.distance}-${finish.distance}`] || 0
+                    steps: this.stepCounts[segmentId] || 0
                 });
             }
         }
