@@ -239,6 +239,44 @@
               <canvas ref="velocityChartCanvas"></canvas>
             </div>
           </div>
+
+          <!-- FV Profile Chart -->
+          <div class="bg-slate-900 rounded-xl p-6 border border-slate-800 shadow-sm lg:col-span-2">
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Profil Scientifique Force-Vitesse</h3>
+              <div v-if="physicsMetrics" class="flex gap-6">
+                <div class="text-center">
+                  <p class="text-[9px] text-slate-500 uppercase font-black">F0 (N/kg)</p>
+                  <p class="text-lg font-bold text-white leading-none">{{ physicsMetrics.f0.toFixed(2) }}</p>
+                </div>
+                <div class="text-center">
+                  <p class="text-[9px] text-slate-500 uppercase font-black">Vmax (m/s)</p>
+                  <p class="text-lg font-bold text-blue-400 leading-none">{{ physicsMetrics.vmax.toFixed(2) }}</p>
+                </div>
+                <div class="text-center">
+                  <p class="text-[9px] text-slate-500 uppercase font-black">Pmax (W/kg)</p>
+                  <p class="text-lg font-bold text-emerald-400 leading-none">{{ physicsMetrics.pmax.toFixed(1) }}</p>
+                </div>
+              </div>
+            </div>
+            <div class="relative h-64 w-full">
+              <canvas ref="fvProfileChartCanvas"></canvas>
+            </div>
+            
+            <div v-if="fvInterpretation" class="mt-6 p-4 bg-white/5 rounded-xl border border-white/5 animate-fade-in">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="w-2 h-2 rounded-full bg-current" :class="fvInterpretation.color"></span>
+                <span class="text-xs font-black uppercase tracking-widest" :class="fvInterpretation.color">{{ fvInterpretation.label }}</span>
+              </div>
+              <p class="text-sm text-slate-300 leading-snug mb-2">{{ fvInterpretation.description }}</p>
+              <div class="flex items-start gap-2 text-[11px] text-slate-500 bg-black/20 p-2 rounded-lg border border-white/5">
+                <span class="text-blue-400 font-bold">CONSEIL:</span>
+                <span>{{ fvInterpretation.advice }}</span>
+              </div>
+            </div>
+
+            <p class="mt-4 text-[10px] text-slate-500 italic text-center">Modèle de dynamique Samozino/Morin - Droite de force et parabole de puissance théorique.</p>
+          </div>
         </div>
 
         <!-- Strengths/Weaknesses & Advice -->
@@ -355,8 +393,13 @@ const analysisSplits = computed(() => {
 
 const standardsChartCanvas = ref(null);
 const velocityChartCanvas = ref(null);
+const fvProfileChartCanvas = ref(null);
+const physicsMetrics = ref(null);
+const fvInterpretation = ref(null);
+
 let standardsChart = null;
 let velocityChart = null;
+let fvProfileChart = null;
 
 const loadInitialData = () => {
   const urlParams = new URLSearchParams(window.location.hash.split('?')[1]);
@@ -405,6 +448,10 @@ const runAnalysis = () => {
       prediction.value.analysisGrid = CoachingService.generateAnalysisGrid(athlete.value, prediction.value.time, targetEvent.value, prediction.value.profile);
       prediction.value.consistency = CoachingService.analyzeConsistency(prediction.value.time, targetEvent.value, athlete.value.metrics);
       
+      // Physics profile
+      physicsMetrics.value = CoachingService.getPhysicsProfile(prediction.value.profile);
+      fvInterpretation.value = CoachingService.interpretFVProfile(physicsMetrics.value);
+
       // Wait for Vue to update the DOM (v-if blocks)
       nextTick(() => {
         setTimeout(() => {
@@ -459,6 +506,7 @@ const citedGlossary = computed(() => {
 const renderCharts = () => {
   renderStandardsChart();
   renderVelocityChart();
+  renderFVProfileChart();
 };
 
 const renderStandardsChart = () => {
@@ -559,6 +607,94 @@ const renderVelocityChart = () => {
               title: { display: true, text: 'Vitesse (m/s)', font: { size: 9 } }
           }, 
           x: { grid: { display: false } } 
+      }
+    }
+  });
+};
+
+const renderFVProfileChart = () => {
+  const ctx = fvProfileChartCanvas.value?.getContext('2d');
+  if (!ctx || !physicsMetrics.value) return;
+  if (fvProfileChart) fvProfileChart.destroy();
+
+  const { f0, vmax, pmax } = physicsMetrics.value;
+  
+  // Generate data points
+  const points = 20;
+  const forceData = [];
+  const powerData = [];
+  const labels = [];
+
+  for (let i = 0; i <= points; i++) {
+    const v = (vmax / points) * i;
+    const f = f0 * (1 - v / vmax);
+    const p = f * v;
+    
+    labels.push(v.toFixed(1));
+    forceData.push(f);
+    powerData.push(p);
+  }
+
+  fvProfileChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Force (N/kg)',
+          data: forceData,
+          borderColor: '#3b82f6',
+          backgroundColor: 'transparent',
+          borderWidth: 3,
+          tension: 0,
+          pointRadius: 0,
+          yAxisID: 'y'
+        },
+        {
+          label: 'Puissance (W/kg)',
+          data: powerData,
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 0,
+          yAxisID: 'y1'
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        x: {
+          title: { display: true, text: 'Vitesse (m/s)', color: '#94a3b8', font: { size: 10 } },
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: { color: '#64748b' }
+        },
+        y: {
+          title: { display: true, text: 'Force (N/kg)', color: '#3b82f6', font: { size: 10 } },
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: { color: '#3b82f6' },
+          min: 0
+        },
+        y1: {
+          position: 'right',
+          title: { display: true, text: 'Puissance (W/kg)', color: '#10b981', font: { size: 10 } },
+          grid: { display: false },
+          ticks: { color: '#10b981' },
+          min: 0
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1e293b',
+          callbacks: {
+            label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(2)}`
+          }
+        }
       }
     }
   });

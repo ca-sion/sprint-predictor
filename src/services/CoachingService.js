@@ -381,4 +381,54 @@ export class CoachingService {
         if (status === 'bad') return 'bg-red-600 text-white';
         return 'bg-slate-100 text-slate-600';
     }
+
+    /**
+     * Extracts physical profile metrics (F0, Vmax, Pmax)
+     */
+    static getPhysicsProfile(profile) {
+        if (!profile || !profile.vmax || !profile.tau) return null;
+        
+        const vmax = profile.vmax;
+        const f0 = vmax / profile.tau; // Relative Force (N/kg)
+        const pmax = (f0 * vmax) / 4; // Relative Power (W/kg)
+        
+        return {
+            f0,
+            vmax,
+            pmax,
+            slope: -f0 / vmax
+        };
+    }
+
+    /**
+     * Interprets the FV profile to give a specific orientation
+     */
+    static interpretFVProfile(physics) {
+        if (!physics) return null;
+        const { f0, vmax } = physics;
+        const ratio = f0 / vmax; // Index of the slope
+
+        if (ratio > 1.15) {
+            return {
+                label: "Force-Dominant",
+                color: "text-blue-400",
+                description: "Forte capacité d'accélération initiale mais plafond de vitesse atteint rapidement.",
+                advice: "Priorité : Sprint lancé, survitesse et travail de fréquence gestuelle."
+            };
+        } else if (ratio < 0.85) {
+            return {
+                label: "Velocity-Dominant",
+                color: "text-emerald-400",
+                description: "Excellente vitesse de pointe théorique mais manque d'explosivité en sortie de blocks.",
+                advice: "Priorité : Force maximale (Squat), charges lourdes (Heavy Sled) et puissance initiale."
+            };
+        } else {
+            return {
+                label: "Profil Équilibré",
+                color: "text-purple-400",
+                description: "Bonne harmonie entre la force produite au départ et la vitesse de pointe.",
+                advice: "Continuez le développement parallèle des deux qualités pour élever le niveau global."
+            };
+        }
+    }
 }
