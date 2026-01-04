@@ -41,6 +41,22 @@ export const ATHLETICS_DATA = {
             }
         }
     },
+    '80m': {
+        'M': {
+            'U16': {
+                standards: { NATIONAL: 9.40, REGIONAL: 10.20 },
+                performance_ranges: { min: 9.40, max: 9.90 },
+                tests: { fly30m: { min: 3.50, max: 3.70 }, block30m: { target: 4.40 } }
+            }
+        },
+        'F': {
+            'U16': {
+                standards: { NATIONAL: 10.20, REGIONAL: 11.00 },
+                performance_ranges: { min: 10.20, max: 10.80 },
+                tests: { fly30m: { min: 3.90, max: 4.10 }, block30m: { target: 5.10 } }
+            }
+        }
+    },
     '50mH': {
         'M': {
             'ELITE': { standards: { INTERNATIONAL: 6.45, NATIONAL: 6.75 }, performance_ranges: { min: 6.50, max: 6.85 }, specs: { start: 13.72, space: 9.14, height: 1.06 } },
@@ -93,7 +109,7 @@ export const ATHLETICS_DATA = {
             },
             'U16': {
                 standards: { INTERNATIONAL: 11.20, NATIONAL: 11.60, REGIONAL: 12.20 },
-                performance_ranges: { min: 9.40, max: 9.90, note: "Basé sur 80m" },
+                performance_ranges: { min: 11.60, max: 12.20 },
                 tests: { fly30m: { min: 3.50, max: 3.70 }, block30m: { target: 4.40 }, cmj: { min: 36, max: 42 } },
                 mechanics: { contactTime: { min: 130, max: 150 }, vMax: { min: 8.80, max: 10.00 } }
             }
@@ -125,7 +141,7 @@ export const ATHLETICS_DATA = {
             },
             'U16': {
                 standards: { INTERNATIONAL: 12.30, NATIONAL: 12.90, REGIONAL: 13.60 },
-                performance_ranges: { min: 10.20, max: 10.80, note: "Basé sur 80m" },
+                performance_ranges: { min: 12.80, max: 13.40 },
                 tests: { fly30m: { min: 3.90, max: 4.10 }, block30m: { target: 5.10 }, cmj: { min: 28, max: 34 } },
                 mechanics: { contactTime: { min: 135, max: 155 }, vMax: { min: 8.20, max: 8.90 } }
             }
@@ -159,19 +175,19 @@ export const ATHLETICS_DATA = {
                 standards: { INTERNATIONAL: 46.00, NATIONAL: 47.80, REGIONAL: 50.50 },
                 performance_ranges: { min: 46.80, max: 48.50 },
                 tests: { cmj: { min: 48, max: 55 } },
-                model: { target: 47.50, splits: { 100: 11.4, 200: 22.8, 300: 34.6, 400: 47.5 }, diff: 2.0 }
+                model: { target: 47.50, splits: { 100: 11.4, 200: 22.8, 300: 34.6, 400: 47.5 }, diff: 2.2 }
             },
             'U20': {
                 standards: { INTERNATIONAL: 46.80, NATIONAL: 48.50, REGIONAL: 51.00 },
                 performance_ranges: { min: 48.50, max: 49.80 },
                 tests: { cmj: { min: 45, max: 52 } },
-                model: { target: 49.00, splits: { 100: 11.8, 200: 23.5, 300: 35.8, 400: 49.0 }, diff: 2.0 }
+                model: { target: 49.00, splits: { 100: 11.8, 200: 23.5, 300: 35.8, 400: 49.0 }, diff: 2.3 }
             },
             'U18': {
                 standards: { INTERNATIONAL: 48.00, NATIONAL: 50.00, REGIONAL: 53.00 },
                 performance_ranges: { min: 50.50, max: 53.00 },
                 tests: { cmj: { min: 40, max: 46 } },
-                model: { target: 51.50, splits: { 100: 12.2, 200: 24.5, 300: 37.5, 400: 51.5 }, diff: 2.5 }
+                model: { target: 51.50, splits: { 100: 12.2, 200: 24.5, 300: 37.5, 400: 51.5 }, diff: 2.8 }
             }
         },
         'F': {
@@ -185,19 +201,19 @@ export const ATHLETICS_DATA = {
                 standards: { INTERNATIONAL: 52.50, NATIONAL: 54.80, REGIONAL: 57.80 },
                 performance_ranges: { min: 53.50, max: 56.00 },
                 tests: { cmj: { min: 36, max: 42 } },
-                model: { target: 54.00, splits: { 100: 12.9, 200: 25.8, 300: 39.2, 400: 54.0 }, diff: 2.6 }
+                model: { target: 54.00, splits: { 100: 12.9, 200: 25.8, 300: 39.2, 400: 54.0 }, diff: 2.8 }
             },
             'U20': {
                 standards: { INTERNATIONAL: 53.50, NATIONAL: 56.00, REGIONAL: 59.00 },
                 performance_ranges: { min: 54.50, max: 57.00 },
                 tests: { cmj: { min: 34, max: 39 } },
-                model: { target: 56.00, splits: { 100: 13.2, 200: 26.5, 300: 40.5, 400: 56.0 }, diff: 3.0 }
+                model: { target: 56.00, splits: { 100: 13.2, 200: 26.5, 300: 40.5, 400: 56.0 }, diff: 3.2 }
             },
             'U18': {
                 standards: { INTERNATIONAL: 55.00, NATIONAL: 57.50, REGIONAL: 61.00 },
                 performance_ranges: { min: 57.50, max: 61.00 },
                 tests: { cmj: { min: 30, max: 35 } },
-                model: { target: 59.50, splits: { 100: 14.0, 200: 28.2, 300: 43.5, 400: 59.5 }, diff: 3.1 }
+                model: { target: 59.50, splits: { 100: 14.0, 200: 28.2, 300: 43.5, 400: 59.5 }, diff: 3.5 }
             }
         }
     },
@@ -229,15 +245,15 @@ export const ATHLETICS_DATA = {
  */
 export const CONTACT_TIME_TARGETS = {
   M: [
-    { label: "Élite Mondiale", min: 80, max: 90, vmax: "> 11.5" },
-    { label: "National / Élite", min: 90, max: 105, vmax: "10.5 - 11" },
+    { label: "ELITE", min: 80, max: 90, vmax: "> 11.5" },
+    { label: "NATIONAL", min: 90, max: 105, vmax: "10.5 - 11" },
     { label: "U20", min: 105, max: 115, vmax: "9.5 - 10.5" },
     { label: "U18", min: 115, max: 130, vmax: "8.5 - 9.5" },
     { label: "U16", min: 130, max: 150, vmax: "7.5 - 8.5" },
   ],
   F: [
-    { label: "Élite Mondiale", min: 95, max: 105, vmax: "> 10.8" },
-    { label: "National / Élite", min: 105, max: 115, vmax: "9.8 - 10.5" },
+    { label: "ELITE", min: 95, max: 105, vmax: "> 10.8" },
+    { label: "NATIONAL", min: 105, max: 115, vmax: "9.8 - 10.5" },
     { label: "U20", min: 115, max: 125, vmax: "9.0 - 9.8" },
     { label: "U18", min: 125, max: 140, vmax: "8.2 - 9.0" },
     { label: "U16", min: 135, max: 155, vmax: "7.5 - 8.2" },
@@ -272,15 +288,15 @@ export const PHYSICS_CONSTANTS = {
     },
     ACCEL_BONUS: 0.15,
     PACING_400M: {
-        U16: 2.0,
-        U18: 1.5,
-        ELITE: 1.0
+        U16: 3.0,
+        U18: 2.0,
+        ELITE: 1.5
     }
 };
 
 export const NORMALIZATION_RANGES = {
-    tau: { min: 1.5, max: 0.70 },
-    vmax: { min: 7.0, max: 12.5 },
+    tau: { min: 1.8, max: 0.70 },
+    vmax: { min: 6.0, max: 12.5 },
     pmax: { min: 10, max: 45 },
     endurance: { min: 1.35, max: 1.05 },
     reactivity: { min: 5, max: 25 }
@@ -316,17 +332,17 @@ export const ADVICE_THRESHOLDS = {
 
 export const QUALITY_BENCHMARKS = {
   M: {
-    ELITE: { tau: 0.90, vmax: 11.6, f0: 12.9, v0: 12.2, pmax: 28, endurance: 1.10, reactivity: 15, contactTime: { min: 80, max: 90 } },
-    U23:   { tau: 0.94, vmax: 11.2, f0: 11.9, v0: 11.8, pmax: 25, endurance: 1.12, reactivity: 14, contactTime: { min: 90, max: 100 } },
-    U20:   { tau: 0.98, vmax: 10.8, f0: 11.0, v0: 11.4, pmax: 22, endurance: 1.14, reactivity: 12, contactTime: { min: 105, max: 115 } },
-    U18:   { tau: 1.05, vmax: 10.2, f0: 9.7,  v0: 10.8, pmax: 19, endurance: 1.18, reactivity: 10, contactTime: { min: 115, max: 130 } },
-    U16:   { tau: 1.15, vmax: 9.2,  f0: 8.0,  v0: 9.8,  pmax: 15, endurance: 1.22, reactivity: 8,  contactTime: { min: 130, max: 150 } }
+    ELITE: { tau: 0.95, vmax: 11.6, f0: 12.9, v0: 12.2, pmax: 28, endurance: 1.10, reactivity: 15, contactTime: { min: 80, max: 90 } },
+    U23:   { tau: 0.98, vmax: 11.2, f0: 11.9, v0: 11.8, pmax: 25, endurance: 1.12, reactivity: 14, contactTime: { min: 90, max: 100 } },
+    U20:   { tau: 1.02, vmax: 10.8, f0: 11.0, v0: 11.4, pmax: 22, endurance: 1.14, reactivity: 12, contactTime: { min: 105, max: 115 } },
+    U18:   { tau: 1.10, vmax: 10.2, f0: 9.7,  v0: 10.8, pmax: 19, endurance: 1.18, reactivity: 10, contactTime: { min: 115, max: 130 } },
+    U16:   { tau: 1.20, vmax: 9.2,  f0: 8.0,  v0: 9.8,  pmax: 15, endurance: 1.22, reactivity: 8,  contactTime: { min: 130, max: 150 } }
   },
   F: {
-    ELITE: { tau: 0.96, vmax: 10.6, f0: 11.0, v0: 11.2, pmax: 23, endurance: 1.12, reactivity: 13, contactTime: { min: 95, max: 105 } },
-    U23:   { tau: 1.00, vmax: 10.2, f0: 10.2, v0: 10.8, pmax: 20, endurance: 1.14, reactivity: 12, contactTime: { min: 105, max: 115 } },
-    U20:   { tau: 1.05, vmax: 9.8,  f0: 9.3,  v0: 10.4, pmax: 18, endurance: 1.16, reactivity: 11, contactTime: { min: 115, max: 125 } },
-    U18:   { tau: 1.10, vmax: 9.2,  f0: 8.4,  v0: 9.8,  pmax: 15, endurance: 1.20, reactivity: 9,  contactTime: { min: 125, max: 140 } },
-    U16:   { tau: 1.20, vmax: 8.4,  f0: 7.0,  v0: 9.0,  pmax: 12, endurance: 1.24, reactivity: 7,  contactTime: { min: 135, max: 155 } }
+    ELITE: { tau: 1.02, vmax: 10.6, f0: 11.0, v0: 11.2, pmax: 23, endurance: 1.12, reactivity: 13, contactTime: { min: 95, max: 105 } },
+    U23:   { tau: 1.06, vmax: 10.2, f0: 10.2, v0: 10.8, pmax: 20, endurance: 1.14, reactivity: 12, contactTime: { min: 105, max: 115 } },
+    U20:   { tau: 1.12, vmax: 9.8,  f0: 9.3,  v0: 10.4, pmax: 18, endurance: 1.16, reactivity: 11, contactTime: { min: 115, max: 125 } },
+    U18:   { tau: 1.18, vmax: 9.2,  f0: 8.4,  v0: 9.8,  pmax: 15, endurance: 1.20, reactivity: 9,  contactTime: { min: 125, max: 140 } },
+    U16:   { tau: 1.28, vmax: 8.4,  f0: 7.0,  v0: 9.0,  pmax: 12, endurance: 1.24, reactivity: 7,  contactTime: { min: 135, max: 155 } }
   }
 };

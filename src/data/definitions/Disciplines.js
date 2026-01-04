@@ -55,6 +55,25 @@ export const DISCIPLINES = {
       { label: "60m", start: 0, end: 60, type: "total" },
     ],
   },
+  "80m": {
+    id: "80m",
+    name: "80m",
+    type: DISCIPLINE_TYPES.FLAT,
+    distance: 80,
+    params: {
+      kFactor: { U16: 0.7, default: 0.37 },
+    },
+    capture: [
+      { label: "Départ (0m)", type: "split", distance: 0 },
+      { label: "30m", type: "split", distance: 30 },
+      { label: "Arrivée (80m)", type: "split", distance: 80 },
+    ],
+    analysis: [
+      { label: "Départ (0-30)", start: 0, end: 30, type: "accel" },
+      { label: "Transition (30-80)", start: 30, end: 80, type: "vmax" },
+      { label: "80m", start: 0, end: 80, type: "total" },
+    ],
+  },
   "100m": {
     id: "100m",
     name: "100m",

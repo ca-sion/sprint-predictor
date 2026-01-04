@@ -120,9 +120,10 @@ export class PredictionEngine {
             usedMethod = 'Loi de Mero';
         }
         
-        // PB sanity check (100m)
-        if (metrics.pb_100m && distance === 100 && (metrics.pb_100m - finalTime) > 0.5) {
-            finalTime = (finalTime + metrics.pb_100m) / 2;
+        // PB sanity check (Flat sprints)
+        const pbVal = metrics[`pb_${distance}m`] || (distance === 100 ? metrics.pb_100m : null);
+        if (pbVal && (pbVal - finalTime) > 0.5) {
+            finalTime = (finalTime + pbVal) / 2;
             usedMethod = "Moyenne (Potentiel vs Réalisé)";
         }
 

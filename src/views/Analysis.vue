@@ -100,6 +100,7 @@
               <option value="60m">60m</option>
               <option value="50mH">50m Haies</option>
               <option value="60mH">60m Haies</option>
+              <option value="80m">80m</option>
               <option value="100m">100m</option>
               <option value="200m">200m</option>
               <option value="400m">400m</option>
