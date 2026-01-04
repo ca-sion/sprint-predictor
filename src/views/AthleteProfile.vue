@@ -13,6 +13,12 @@
         </h2>
       </div>
       <div class="flex items-center space-x-2 sm:space-x-3 w-full sm:w-auto">
+        <button @click="shareAthlete" class="flex-1 sm:flex-none inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm sm:text-base font-bold rounded-lg transition-colors shadow-sm">
+          <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
+          </svg>
+          Partager
+        </button>
         <button @click="exportAthleteData" class="flex-1 sm:flex-none inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm sm:text-base font-bold rounded-lg transition-colors shadow-sm">
           <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
@@ -121,6 +127,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { Athlete } from '../models/Athlete.js';
 import { Race } from '../models/Race.js';
 import { StorageManager } from '../models/StorageManager.js';
+import { ExportService } from '../services/ExportService.js';
 import { INPUT_GROUPS } from '../data/definitions/FormConfig.js';
 
 const route = useRoute();
@@ -167,24 +174,21 @@ const goToAnalysis = () => {
 
 const exportAthleteData = () => {
   if (!athlete.value) return;
-  
-  const athleteRaces = Race.getByAthlete(athlete.value.id);
-  const exportData = {
-    type: 'sprint_predictor_export',
-    version: 1,
-    scope: 'athlete',
-    athlete: athlete.value,
-    races: athleteRaces
-  };
+  ExportService.exportAthlete(athlete.value.id);
+};
 
-  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const fileName = `athlete-${athlete.value.name.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.json`;
-  a.href = url;
-  a.download = fileName;
-  a.click();
-  URL.revokeObjectURL(url);
+const shareAthlete = () => {
+  if (!athlete.value) return;
+  const result = ExportService.generateAthleteShareLink(athlete.value.id);
+  if (result) {
+    navigator.clipboard.writeText(result.url).then(() => {
+      let msg = "Lien de partage de l'athlète copié !";
+      if (result.isLimited) {
+        msg += "\n\nNote: Seules les 3 courses les plus récentes sont incluses dans le lien. Utilisez 'Exporter' pour envoyer l'historique complet.";
+      }
+      alert(msg);
+    });
+  }
 };
 
 onMounted(loadAthlete);

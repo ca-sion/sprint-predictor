@@ -108,6 +108,7 @@ import { useRouter } from 'vue-router';
 import { Athlete } from '../models/Athlete.js';
 import { Race } from '../models/Race.js';
 import { StorageManager } from '../models/StorageManager.js';
+import { ExportService } from '../services/ExportService.js';
 
 const router = useRouter();
 const athletes = ref({});
@@ -157,12 +158,13 @@ const deleteAthlete = (id) => {
 };
 
 const exportData = () => {
+  // Export complet de toute la base de données (backup global)
   const db = StorageManager.getDB();
-  
   const exportBundle = {
     type: 'sprint_predictor_export',
     version: db.version || 1,
     scope: 'all',
+    exportDate: new Date().toISOString(),
     db: db
   };
 
@@ -170,51 +172,28 @@ const exportData = () => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `sprint-predictor-full-export-${new Date().toISOString().split('T')[0]}.json`;
+  a.download = `sprint-predictor-full-backup-${new Date().toISOString().split('T')[0]}.json`;
   a.click();
   URL.revokeObjectURL(url);
 };
 
-const importData = (event) => {
+const importData = async (event) => {
   const file = event.target.files[0];
   if (!file) return;
 
   const reader = new FileReader();
-  reader.onload = (e) => {
+  reader.onload = async (e) => {
     try {
-      const data = JSON.parse(e.target.result);
-      const db = StorageManager.getDB();
+      const text = e.target.result;
+      const result = await ExportService.importData(text);
       
-      if (data.type !== 'sprint_predictor_export') {
-        throw new Error("Format de fichier non reconnu");
+      if (result.type === 'athlete') {
+        alert(`Importation réussie : Athlète importé avec ${result.count} courses.`);
+      } else if (result.type === 'global') {
+        alert(`Restauration complète réussie : ${result.count} athlètes importés/mis à jour.`);
       }
-
-      // 1. Cas Export COMPLET
-      if (data.scope === 'all' && data.db) {
-        // Fusion des athlètes
-        db.athletes = { ...db.athletes, ...data.db.athletes };
-        
-        // Fusion des courses (robuste: gère tableau ou objet)
-        const racesToImport = data.db.races || {};
-        if (Array.isArray(racesToImport)) {
-          racesToImport.forEach(r => { if(r.id) db.races[r.id] = r; });
-        } else {
-          db.races = { ...db.races, ...racesToImport };
-        }
-      } 
-      // 2. Cas Export PARTIEL (un seul athlète + ses courses)
-      else if (data.scope === 'athlete' && data.athlete) {
-        db.athletes[data.athlete.id] = data.athlete;
-        if (Array.isArray(data.races)) {
-          data.races.forEach(r => { if(r.id) db.races[r.id] = r; });
-        }
-      } else {
-        throw new Error("Contenu de l'export invalide ou non supporté");
-      }
-
-      StorageManager.saveDB(db);
+      
       loadAthletes();
-      alert("Importation réussie !");
       event.target.value = '';
     } catch (err) {
       console.error(err);
@@ -225,11 +204,16 @@ const importData = (event) => {
 };
 
 const shareAthlete = (athlete) => {
-  const data = btoa(JSON.stringify(athlete));
-  const url = `${window.location.origin}${window.location.pathname}#/analysis?share=${data}`;
-  navigator.clipboard.writeText(url).then(() => {
-    alert("Lien de partage copié dans le presse-papier !");
-  });
+  const result = ExportService.generateAthleteShareLink(athlete.id);
+  if (result) {
+    navigator.clipboard.writeText(result.url).then(() => {
+      let msg = "Lien de partage de l'athlète copié !";
+      if (result.isLimited) {
+        msg += "\n\nNote: Seules les 3 courses les plus récentes sont incluses dans le lien pour limiter la taille. Utilisez 'Exporter' pour tout envoyer.";
+      }
+      alert(msg);
+    });
+  }
 };
 
 onMounted(loadAthletes);

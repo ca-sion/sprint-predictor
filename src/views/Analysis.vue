@@ -402,20 +402,6 @@ let radarChart = null;
 let fvProfileChart = null;
 
 const loadInitialData = () => {
-  const urlParams = new URLSearchParams(window.location.hash.split('?')[1]);
-  const sharedData = urlParams.get('share');
-  
-  if (sharedData) {
-    try {
-      const data = JSON.parse(atob(sharedData));
-      athlete.value = new Athlete(data);
-      // Save shared athlete to storage so it appears in the list
-      athlete.value.save();
-      StorageManager.setCurrentAthlete(athlete.value.id);
-      return;
-    } catch (e) { console.error("Error decoding shared data", e); }
-  }
-
   const savedId = StorageManager.getCurrentAthleteId();
   if (savedId) {
     const loaded = Athlete.load(savedId);
