@@ -5,7 +5,7 @@
  * Driven by DISCIPLINES configuration.
  */
 import { ATHLETICS_DATA } from '../data/definitions/Standards.js';
-import { DISCIPLINES } from '../data/definitions/Disciplines.js';
+import { DISCIPLINES, DISCIPLINE_TYPES } from '../data/definitions/Disciplines.js';
 
 export class PredictionEngine {
     constructor() {
@@ -38,19 +38,19 @@ export class PredictionEngine {
 
         // Dispatch based on discipline type
         switch (config.type) {
-            case 'flat':
+            case DISCIPLINE_TYPES.FLAT:
                 result = this.predictFlat(profile, config, athlete);
                 break;
-            case 'flat_long': // 200m
+            case DISCIPLINE_TYPES.FLAT_LONG: // 200m
                 result = this.predictFlatLong(profile, config, athlete);
                 break;
-            case 'long_sprint': // 400m
+            case DISCIPLINE_TYPES.LONG_SPRINT: // 400m
                 result = this.predictLongSprint(profile, config, athlete);
                 break;
-            case 'hurdles':
+            case DISCIPLINE_TYPES.HURDLES:
                 result = this.predictHurdles(profile, config, athlete);
                 break;
-            case 'hurdles_long': // 400mH
+            case DISCIPLINE_TYPES.HURDLES_LONG: // 400mH
                 result = this.predictHurdlesLong(profile, config, athlete);
                 break;
         }

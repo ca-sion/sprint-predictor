@@ -1,5 +1,17 @@
 import { ATHLETICS_DATA } from './Standards.js';
 
+export const DISCIPLINE_TYPES = {
+    FLAT: 'flat',
+    FLAT_LONG: 'flat_long',
+    LONG_SPRINT: 'long_sprint',
+    HURDLES: 'hurdles',
+    HURDLES_LONG: 'hurdles_long'
+};
+
+export const HURDLE_CONSTANTS = {
+    DEFAULT_TAKEOFF_OFFSET: 2.0
+};
+
 /**
  * Unified Discipline Configuration
  * Source of truth for Prediction Engine, Capture Tool, and Analysis.
@@ -8,7 +20,7 @@ export const DISCIPLINES = {
   "50m": {
     id: "50m",
     name: "50m",
-    type: "flat",
+    type: DISCIPLINE_TYPES.FLAT,
     distance: 50,
     params: {
       kFactor: { U16: 0.7, default: 0.37 },
@@ -27,7 +39,7 @@ export const DISCIPLINES = {
   "60m": {
     id: "60m",
     name: "60m",
-    type: "flat",
+    type: DISCIPLINE_TYPES.FLAT,
     distance: 60,
     params: {
       kFactor: { U16: 0.7, default: 0.37 },
@@ -46,7 +58,7 @@ export const DISCIPLINES = {
   "100m": {
     id: "100m",
     name: "100m",
-    type: "flat",
+    type: DISCIPLINE_TYPES.FLAT,
     distance: 100,
     params: {
       baseStartCost: 0.92,
@@ -73,7 +85,7 @@ export const DISCIPLINES = {
   "200m": {
     id: "200m",
     name: "200m",
-    type: "flat_long",
+    type: DISCIPLINE_TYPES.FLAT_LONG,
     distance: 200,
     params: {
       fatigueIndexThresholds: { speed: 1.25, endurance: 1.15 },
@@ -83,18 +95,20 @@ export const DISCIPLINES = {
       { label: "Départ (0m)", type: "split", distance: 0 },
       { label: "30m", type: "split", distance: 30 },
       { label: "100m", type: "split", distance: 100 },
+      { label: "150m", type: "split", distance: 150 },
       { label: "Arrivée (200m)", type: "split", distance: 200 },
     ],
     analysis: [
-      { label: "Virage", start: 0, end: 100, type: "vmax" },
-      { label: "Ligne droite", start: 100, end: 200, type: "speed_maint" },
+      { label: "Virage (0-100m)", start: 0, end: 100, type: "vmax" },
+      { label: "Sortie virage (100-150m)", start: 100, end: 150, type: "speed_maint" },
+      { label: "Maintien / Décélération (150-200m)", start: 150, end: 200, type: "endurance" },
       { label: "200m", start: 0, end: 200, type: "total" },
     ],
   },
   "400m": {
     id: "400m",
     name: "400m",
-    type: "long_sprint",
+    type: DISCIPLINE_TYPES.LONG_SPRINT,
     distance: 400,
     params: {
       fatigueIndexThresholds: { sprinter: 1.2, resistant: 1.1 },
@@ -117,7 +131,7 @@ export const DISCIPLINES = {
   "50mH": {
     id: "50mH",
     name: "50m Haies",
-    type: "hurdles",
+    type: DISCIPLINE_TYPES.HURDLES,
     distance: 50,
     hurdleCount: 4,
     params: {
@@ -127,7 +141,7 @@ export const DISCIPLINES = {
   "60mH": {
     id: "60mH",
     name: "60m Haies",
-    type: "hurdles",
+    type: DISCIPLINE_TYPES.HURDLES,
     distance: 60,
     hurdleCount: 5,
     params: {
@@ -137,7 +151,7 @@ export const DISCIPLINES = {
   "100mH": {
     id: "100mH",
     name: "100m Haies (F)",
-    type: "hurdles",
+    type: DISCIPLINE_TYPES.HURDLES,
     distance: 100,
     hurdleCount: 10,
     params: {
@@ -147,7 +161,7 @@ export const DISCIPLINES = {
   "110mH": {
     id: "110mH",
     name: "110m Haies (M)",
-    type: "hurdles",
+    type: DISCIPLINE_TYPES.HURDLES,
     distance: 110,
     hurdleCount: 10,
     params: {
@@ -157,17 +171,12 @@ export const DISCIPLINES = {
   "400mH": {
     id: "400mH",
     name: "400m Haies",
-    type: "hurdles_long",
+    type: DISCIPLINE_TYPES.HURDLES_LONG,
     distance: 400,
     hurdleCount: 10,
     params: {
       diff400: { F: 4.5, M: 4.0, U18_bonus: 1.0 },
-    },
-    capture: [
-      { label: "Départ (0m)", type: "split", distance: 0 },
-      ...Array.from({ length: 10 }, (_, i) => [{ label: `H${i + 1} Touchdown`, type: "touchdown", distance: 45.0 + i * 35.0 }]).flat(),
-      { label: "Arrivée (400m)", type: "split", distance: 400 },
-    ]
+    }
   }
 };
 
@@ -196,18 +205,28 @@ export const getDynamicDisciplineConfig = (disciplineId, gender = 'M', category 
     const config = DISCIPLINES[disciplineId];
     if (!config) return [];
 
-    if (config.type === 'hurdles') {
+    if (config.type === DISCIPLINE_TYPES.HURDLES || config.type === DISCIPLINE_TYPES.HURDLES_LONG) {
         const specs = getHurdleSpecs(disciplineId, gender, category);
         if (specs && specs.start && specs.space) {
             const { start, space } = specs;
-            return [
-                { label: "Départ (0m)", type: "split", distance: 0 },
-                ...Array.from({ length: config.hurdleCount }, (_, i) => [
-                    { label: `H${i + 1} Take-off`, type: "takeoff", distance: start + i * space - 2 },
-                    { label: `H${i + 1} Touchdown`, type: "touchdown", distance: start + i * space },
-                ]).flat(),
-                { label: `Arrivée (${config.distance}m)`, type: "split", distance: config.distance },
-            ];
+            const milestones = [{ label: "Départ (0m)", type: "split", distance: 0 }];
+            
+            for (let i = 0; i < config.hurdleCount; i++) {
+                const hurdleDist = start + i * space;
+                
+                // Différenciation : Haies courtes (take-off + touchdown), Haies longues (touchdown uniquement)
+                if (config.type === DISCIPLINE_TYPES.HURDLES) {
+                    milestones.push({ 
+                        label: `H${i + 1} Take-off`, 
+                        type: "takeoff", 
+                        distance: hurdleDist - HURDLE_CONSTANTS.DEFAULT_TAKEOFF_OFFSET 
+                    });
+                }
+                milestones.push({ label: `H${i + 1} Touchdown`, type: "touchdown", distance: hurdleDist });
+            }
+            
+            milestones.push({ label: `Arrivée (${config.distance}m)`, type: "split", distance: config.distance });
+            return milestones;
         }
     }
     return config.capture || [];
@@ -221,19 +240,11 @@ export const getDynamicAnalysisTemplate = (disciplineId, gender = 'M', category 
     if (!config) return [];
 
     // Hurdles (Short & Long): generate granular segments touchdown-to-touchdown
-    if (config.type === 'hurdles' || config.type === 'hurdles_long') {
-        let start = 0;
-        let space = 0;
-        
-        if (config.type === 'hurdles') {
-            const specs = getHurdleSpecs(disciplineId, gender, category);
-            if (specs) { start = specs.start; space = specs.space; }
-        } else {
-            // 400mH case
-            start = 45.0; space = 35.0;
-        }
+    if (config.type === DISCIPLINE_TYPES.HURDLES || config.type === DISCIPLINE_TYPES.HURDLES_LONG) {
+        const specs = getHurdleSpecs(disciplineId, gender, category);
 
-        if (start && space) {
+        if (specs && specs.start && specs.space) {
+            const { start, space } = specs;
             const template = [
                 { label: "Départ-H1", start: 0, end: start, type: "accel" }
             ];
@@ -245,12 +256,13 @@ export const getDynamicAnalysisTemplate = (disciplineId, gender = 'M', category 
             }
             
             const lastH = start + (config.hurdleCount - 1) * space;
+
             template.push({ label: "Final", start: lastH, end: config.distance, type: "finish" });
             template.push({ label: config.name, start: 0, end: config.distance, type: "total" });
-            
+
             return template;
         }
     }
-    
+
     return config.analysis || [];
 };

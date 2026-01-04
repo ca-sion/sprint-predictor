@@ -204,8 +204,8 @@ export const ATHLETICS_DATA = {
         }
     },
     '400mH': {
-        'M': { 'ELITE': { standards: { INTERNATIONAL: 49.00, NATIONAL: 52.00 }, tests: { cmj: { min: 50, max: 57 } }, specs: { height: 0.91 } } },
-        'F': { 'ELITE': { standards: { INTERNATIONAL: 55.00, NATIONAL: 59.00 }, tests: { cmj: { min: 38, max: 45 } }, specs: { height: 0.76 } } }
+        'M': { 'ELITE': { standards: { INTERNATIONAL: 49.00, NATIONAL: 52.00 }, tests: { cmj: { min: 50, max: 57 } }, specs: { start: 45.0, space: 35.0, height: 0.91 } } },
+        'F': { 'ELITE': { standards: { INTERNATIONAL: 55.00, NATIONAL: 59.00 }, tests: { cmj: { min: 38, max: 45 } }, specs: { start: 45.0, space: 35.0, height: 0.76 } } }
     }
 };
 
