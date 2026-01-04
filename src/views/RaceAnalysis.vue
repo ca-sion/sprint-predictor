@@ -205,34 +205,36 @@
                       </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
-                      <tr v-for="(interval, index) in customIntervals" :key="index" class="hover:bg-blue-50/30 transition-colors group">
-                        <td class="px-4 py-3">
-                          <span class="font-black text-slate-400 group-hover:text-blue-600 text-[10px] uppercase tracking-widest">{{ interval.label }}</span>
-                        </td>
-                        <td class="px-4 py-3 text-xs font-bold text-slate-500">
-                          {{ interval.start }}-{{ interval.end }}m
-                        </td>
-                        <td class="px-4 py-3 font-mono font-bold text-slate-900">
-                          {{ FormatService.time(interval.time, 3) }}
-                        </td>
-                        <td class="px-4 py-3">
-                          <div class="flex items-center gap-2">
-                            <span class="font-black text-blue-600 tabular-nums">{{ FormatService.number(interval.speed) }}</span>
-                            <div class="hidden sm:block w-12 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                              <div class="h-full bg-blue-500" :style="{ width: Math.min((interval.speed / 12) * 100, 100) + '%' }"></div>
+                      <template v-for="(interval, index) in customIntervals" :key="index">
+                        <tr v-if="interval" class="hover:bg-blue-50/30 transition-colors group">
+                          <td class="px-4 py-3">
+                            <span class="font-black text-slate-400 group-hover:text-blue-600 text-[10px] uppercase tracking-widest">{{ interval.label }}</span>
+                          </td>
+                          <td class="px-4 py-3 text-xs font-bold text-slate-500">
+                            {{ interval.start }}-{{ interval.end }}m
+                          </td>
+                          <td class="px-4 py-3 font-mono font-bold text-slate-900">
+                            {{ FormatService.time(interval.time, 3) }}
+                          </td>
+                          <td class="px-4 py-3">
+                            <div class="flex items-center gap-2">
+                              <span class="font-black text-blue-600 tabular-nums">{{ FormatService.number(interval.speed) }}</span>
+                              <div class="hidden sm:block w-12 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                <div class="h-full bg-blue-500" :style="{ width: Math.min((interval.speed / 12) * 100, 100) + '%' }"></div>
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td class="px-4 py-3 text-slate-500 font-medium">
-                          {{ interval.steps || '---' }}
-                        </td>
-                        <td class="px-4 py-3 font-bold text-slate-700">
-                          {{ interval.frequency > 0 ? FormatService.number(interval.frequency) : '---' }}
-                        </td>
-                        <td class="px-4 py-3 font-bold text-slate-700">
-                          {{ interval.stepLength > 0 ? FormatService.number(interval.stepLength) : '---' }}
-                        </td>
-                      </tr>
+                          </td>
+                          <td class="px-4 py-3 text-slate-500 font-medium">
+                            {{ interval.steps || '---' }}
+                          </td>
+                          <td class="px-4 py-3 font-bold text-slate-700">
+                            {{ interval.frequency > 0 ? FormatService.number(interval.frequency) : '---' }}
+                          </td>
+                          <td class="px-4 py-3 font-bold text-slate-700">
+                            {{ interval.stepLength > 0 ? FormatService.number(interval.stepLength) : '---' }}
+                          </td>
+                        </tr>
+                      </template>
                     </tbody>
                   </table>
                 </div>

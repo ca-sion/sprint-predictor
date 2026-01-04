@@ -175,7 +175,9 @@
             <div class="absolute left-0 top-0 bottom-0 w-1 bg-purple-400"></div>
             <div class="w-40 flex-shrink-0 p-4 border-r border-purple-100 flex flex-col justify-center">
               <span class="text-[9px] font-black text-purple-500 uppercase tracking-tighter mb-1">Record Virtuel (VB)</span>
-              <span class="text-xl font-black text-purple-600 tabular-nums">{{ virtualBestRow.totalTime.toFixed(2) }}s</span>
+              <span class="text-xl font-black text-purple-600 tabular-nums">
+                {{ virtualBestRow.totalTime > 0 ? FormatService.number(virtualBestRow.totalTime) + 's' : '---' }}
+              </span>
             </div>
             <div class="flex-1 flex">
               <div v-for="(val, idx) in virtualBestRow.segments" :key="'vb-'+idx" class="flex-1 border-r border-purple-100/30 last:border-0 p-1">
@@ -264,14 +266,16 @@
 
           <div class="flex-1 relative py-4">
             <div class="flex h-6 w-full bg-blue-100/30 rounded-full overflow-hidden shadow-inner relative z-20 border-2 border-blue-200/50">
-              <div v-for="(seg, sIdx) in potentialTimelineSegments" :key="'seg-pot-'+sIdx"
-                   class="h-full relative border-r border-white/60 last:border-0 flex items-center justify-center overflow-hidden"
-                   :style="{ 
-                     width: (seg.time / maxTotalTime) * 100 + '%',
-                     ...getCellStyles(seg[activeMetric], virtualBestTimelineSegments[sIdx]?.[activeMetric], activeMetric)
-                   }">
-                <span class="text-[8px] font-black leading-none truncate">{{ formatMetricValue(seg[activeMetric]) }}</span>
-              </div>
+              <template v-for="(seg, sIdx) in potentialTimelineSegments" :key="'seg-pot-'+sIdx">
+                <div v-if="seg && seg.time > 0"
+                    class="h-full relative border-r border-white/60 last:border-0 flex items-center justify-center overflow-hidden"
+                    :style="{ 
+                      width: (seg.time / maxTotalTime) * 100 + '%',
+                      ...getCellStyles(seg[activeMetric], virtualBestTimelineSegments[sIdx]?.[activeMetric], activeMetric)
+                    }">
+                  <span class="text-[8px] font-black leading-none truncate">{{ formatMetricValue(seg[activeMetric]) }}</span>
+                </div>
+              </template>
             </div>
           </div>
         </div>
@@ -284,8 +288,11 @@
               <span class="text-[8px] font-black bg-purple-500 text-white px-1.5 py-0.5 rounded uppercase shadow-sm">VB</span>
             </div>
             <div class="flex items-baseline gap-2">
-               <span class="text-2xl font-black text-purple-600 leading-none">{{ virtualBestRow.totalTime.toFixed(2) }}<span class="text-xs ml-0.5 opacity-40">s</span></span>
-               <span v-if="pbRace" class="text-xs font-bold text-purple-500">
+               <span class="text-2xl font-black text-purple-600 leading-none">
+                 {{ virtualBestRow.totalTime > 0 ? FormatService.number(virtualBestRow.totalTime) : '---' }}
+                 <span class="text-xs ml-0.5 opacity-40" v-if="virtualBestRow.totalTime > 0">s</span>
+               </span>
+               <span v-if="pbRace && virtualBestRow.totalTime > 0" class="text-xs font-bold text-purple-500">
                   {{ formatDiff(virtualBestRow.totalTime - getRaceTotalTime(pbRace)) }}
                </span>
             </div>
@@ -294,14 +301,16 @@
 
           <div class="flex-1 relative py-4">
             <div class="flex h-6 w-full bg-purple-100/30 rounded-full overflow-hidden shadow-inner relative z-20 border-2 border-purple-200/50">
-              <div v-for="(seg, sIdx) in virtualBestTimelineSegments" :key="'seg-vb-'+sIdx"
-                   class="h-full relative border-r border-white/60 last:border-0 flex items-center justify-center overflow-hidden"
-                   :style="{ 
-                     width: (seg.time / maxTotalTime) * 100 + '%',
-                     ...getCellStyles(seg[activeMetric], seg[activeMetric], activeMetric)
-                   }">
-                <span class="text-[8px] font-black leading-none truncate">{{ formatMetricValue(seg[activeMetric]) }}</span>
-              </div>
+              <template v-for="(seg, sIdx) in virtualBestTimelineSegments" :key="'seg-vb-'+sIdx">
+                <div v-if="seg && seg.time > 0"
+                    class="h-full relative border-r border-white/60 last:border-0 flex items-center justify-center overflow-hidden"
+                    :style="{ 
+                      width: (seg.time / maxTotalTime) * 100 + '%',
+                      ...getCellStyles(seg[activeMetric], seg[activeMetric], activeMetric)
+                    }">
+                  <span class="text-[8px] font-black leading-none truncate">{{ formatMetricValue(seg[activeMetric]) }}</span>
+                </div>
+              </template>
             </div>
           </div>
         </div>
@@ -342,14 +351,16 @@
             </template>
 
             <div class="flex h-6 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner relative z-20 border-2 border-slate-200">
-              <div v-for="(seg, sIdx) in getTimelineSegmentsForRace(race)" :key="'seg-'+sIdx"
-                   class="h-full relative transition-all group/timeline border-r border-white/60 last:border-0 flex items-center justify-center overflow-hidden"
-                   :style="{ 
-                     width: (seg.time / maxTotalTime) * 100 + '%', 
-                     ...getCellStyles(seg[activeMetric], virtualBestTimelineSegments[sIdx]?.[activeMetric], activeMetric) 
-                   }">
-                <span class="text-[8px] font-black leading-none truncate">{{ formatMetricValue(seg[activeMetric]) }}</span>
-              </div>
+              <template v-for="(seg, sIdx) in getTimelineSegmentsForRace(race)" :key="'seg-'+sIdx">
+                <div v-if="seg && seg.time > 0"
+                    class="h-full relative transition-all group/timeline border-r border-white/60 last:border-0 flex items-center justify-center overflow-hidden"
+                    :style="{ 
+                      width: (seg.time / maxTotalTime) * 100 + '%', 
+                      ...getCellStyles(seg[activeMetric], virtualBestTimelineSegments[sIdx]?.[activeMetric], activeMetric) 
+                    }">
+                  <span class="text-[8px] font-black leading-none truncate">{{ formatMetricValue(seg[activeMetric]) }}</span>
+                </div>
+              </template>
             </div>
           </div>
         </div>
@@ -473,11 +484,30 @@ const comparisonRow = computed(() => {
   if (!race) return virtualBestRow.value;
   
   const raceInstance = race instanceof Race ? race : new Race(race);
-  const segments = raceInstance.calculateIntervals(templateSegments.value).map(s => s[activeMetric.value]);
+  const segments = raceInstance.calculateIntervals(templateSegments.value).map(s => s ? s[activeMetric.value] : null);
   return {
     totalTime: RaceService.getRaceTotalTime(race),
     segments
   };
+});
+
+// New atomic data for chart
+const comparisonAtomicSegments = computed(() => {
+  const refRace = comparisonRaceId.value 
+    ? filteredRaces.value.find(r => r.id === comparisonRaceId.value)
+    : null;
+  
+  if (refRace) {
+    const raceInstance = refRace instanceof Race ? refRace : new Race(refRace);
+    return raceInstance.calculateIntervals(timelineSegmentsConfig.value);
+  }
+  return virtualBestTimelineSegments.value;
+});
+
+const pbAtomicSegments = computed(() => {
+  if (!pbRace.value) return [];
+  const raceInstance = pbRace.value instanceof Race ? pbRace.value : new Race(pbRace.value);
+  return raceInstance.calculateIntervals(timelineSegmentsConfig.value);
 });
 
 const virtualBestSegments = computed(() => comparisonRow.value?.segments || []);
@@ -506,10 +536,11 @@ const renderComparisonChart = () => {
   if (!ctx) return;
   if (comparisonChart) comparisonChart.destroy();
   
-  const labels = templateSegments.value.map(s => s.label);
-  const theoryData = potentialRow.value?.segments || [];
-  const comparisonData = comparisonRow.value?.segments || [];
-  const pbData = pbRow.value?.segments || [];
+  // Use Atomic Segments for clarity
+  const labels = timelineSegmentsConfig.value.map(s => s.label);
+  const theoryData = potentialTimelineSegments.value.map(s => s ? s[activeMetric.value] : null);
+  const comparisonData = comparisonAtomicSegments.value.map(s => s ? s[activeMetric.value] : null);
+  const pbData = pbAtomicSegments.value.map(s => s ? s[activeMetric.value] : null);
   
   const currentMetric = metrics.find(m => m.id === activeMetric.value);
   const isGhost = !!comparisonRaceId.value;
@@ -517,8 +548,11 @@ const renderComparisonChart = () => {
   // Find peak theory point for highlighting
   let peakIdx = -1;
   if (activeMetric.value === 'speed' && theoryData.length > 0) {
-    const maxVal = Math.max(...theoryData);
-    peakIdx = theoryData.indexOf(maxVal);
+    const validValues = theoryData.filter(v => v !== null);
+    if (validValues.length > 0) {
+      const maxVal = Math.max(...validValues);
+      peakIdx = theoryData.indexOf(maxVal);
+    }
   }
 
   comparisonChart = new Chart(ctx, {
@@ -537,29 +571,32 @@ const renderComparisonChart = () => {
           pointBackgroundColor: '#3b82f6',
           pointBorderWidth: 2,
           pointBorderColor: '#fff',
-          zIndex: 1
+          zIndex: 1,
+          spanGaps: true
         },
         {
           label: `Record (PB)`,
           data: pbData,
-          borderColor: '#facc15', // Yellow-400
+          borderColor: '#facc15', 
           backgroundColor: 'transparent',
           borderWidth: 2,
           pointRadius: 3,
           pointBackgroundColor: '#facc15',
           tension: 0.4,
-          zIndex: 2
+          zIndex: 2,
+          spanGaps: true
         },
         {
           label: isGhost ? 'Course Ghost' : 'Record virtuel (VB)',
           data: comparisonData,
-          borderColor: isGhost ? '#8b5cf6' : '#2563eb', // Purple if Ghost, Blue if VB
+          borderColor: isGhost ? '#8b5cf6' : '#2563eb',
           backgroundColor: isGhost ? 'rgba(139, 92, 246, 0.1)' : 'rgba(37, 99, 235, 0.1)',
           fill: true,
           tension: 0.4,
           pointRadius: 4,
           pointBackgroundColor: isGhost ? '#8b5cf6' : '#2563eb',
-          zIndex: 0
+          zIndex: 0,
+          spanGaps: true
         }
       ]
     },
@@ -629,8 +666,12 @@ const timelineSegmentsConfig = computed(() => {
 const potentialTimelineSegments = computed(() => {
   const result = RaceService.projectPredictionToSegments(prediction.value, timelineSegmentsConfig.value, activeMetric.value, engine);
   if (!result) return [];
+  
+  // We need both the value for the color and the time for the width
+  const timeResult = RaceService.projectPredictionToSegments(prediction.value, timelineSegmentsConfig.value, 'time', engine);
+  
   return timelineSegmentsConfig.value.map((seg, idx) => ({
-      time: result.segments[idx] ? (activeMetric.value === 'time' ? result.segments[idx] : (seg.end - seg.start) / result.segments[idx]) : 0,
+      time: timeResult.segments[idx],
       [activeMetric.value]: result.segments[idx]
   }));
 });
@@ -638,12 +679,14 @@ const potentialTimelineSegments = computed(() => {
 const virtualBestTimelineSegments = computed(() => {
   const result = RaceService.calculateVirtualBest(filteredRaces.value, timelineSegmentsConfig.value, activeMetric.value);
   if (!result) return [];
-  return timelineSegmentsConfig.value.map((seg, idx) => {
-      const val = result.segments[idx];
-      // For time, we need to calculate it correctly if the metric isn't 'time'
-      const timeVal = activeMetric.value === 'time' ? val : (val > 0 ? (seg.end - seg.start) / val : 0);
-      return { time: timeVal, [activeMetric.value]: val };
-  });
+  
+  // Calculate individual best times for widths
+  const timeResult = RaceService.calculateVirtualBest(filteredRaces.value, timelineSegmentsConfig.value, 'time');
+  
+  return timelineSegmentsConfig.value.map((seg, idx) => ({
+      time: timeResult.segments[idx],
+      [activeMetric.value]: result.segments[idx]
+  }));
 });
 
 const getTimelineSegmentsForRace = (race) => {

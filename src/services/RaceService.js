@@ -14,20 +14,29 @@ export class RaceService {
     static getAtomicSegments(disciplineId, analysisTemplate = []) {
         const points = new Set([0]);
         analysisTemplate.forEach(s => { 
-            if (s.start !== null) points.add(s.start); 
-            if (s.end !== null) points.add(s.end); 
+            if (typeof s.start === 'number') points.add(s.start); 
+            if (typeof s.end === 'number') points.add(s.end); 
         });
         
-        const sortedPoints = Array.from(points).sort((a, b) => a - b);
+        const sortedPoints = Array.from(points).filter(p => p !== null && !isNaN(p)).sort((a, b) => a - b);
         const atomic = [];
-        const maxDist = DISCIPLINES[disciplineId]?.distance || sortedPoints[sortedPoints.length - 1];
+        const discipline = DISCIPLINES[disciplineId];
+        const maxDist = discipline?.distance || sortedPoints[sortedPoints.length - 1];
 
         for (let i = 1; i < sortedPoints.length; i++) {
             const start = sortedPoints[i-1];
             const end = sortedPoints[i];
             if (end > maxDist) continue;
-            atomic.push({ start, end, label: `${end}m` });
+            if (Math.abs(end - start) < 0.01) continue; // Avoid zero-length segments
+            atomic.push({ start, end, label: `${start}-${end}m` });
         }
+
+        // Final safety: ensure we reach the finish line
+        const lastPoint = sortedPoints[sortedPoints.length - 1];
+        if (lastPoint < maxDist) {
+            atomic.push({ start: lastPoint, end: maxDist, label: `${lastPoint}-${maxDist}m` });
+        }
+
         return atomic;
     }
 
@@ -37,20 +46,26 @@ export class RaceService {
     static calculateVirtualBest(races, segmentsTemplate, metric = 'speed') {
         if (!races || races.length === 0) return null;
 
-        // 1. TRUE Virtual Best total time (using primitive non-overlapping segments)
-        const primitiveBestTimes = new Map();
-        races.forEach(race => {
-            const raceInstance = race instanceof Race ? race : new Race(race);
-            raceInstance.segmentSpeeds.forEach(seg => {
-                const currentBest = primitiveBestTimes.get(seg.id) || 999;
-                if (seg.time > 0 && seg.time < currentBest) {
-                    primitiveBestTimes.set(seg.id, seg.time);
-                }
-            });
-        });
-        const totalTime = Array.from(primitiveBestTimes.values()).reduce((a, b) => a + b, 0);
+        // 1. Calculate TRUE Virtual Best total time
+        // We use the most granular segments available (atomic) to avoid overlapping
+        const disciplineId = races[0].discipline;
+        const atomicTemplate = this.getAtomicSegments(disciplineId, segmentsTemplate);
+        
+        let totalTime = 0;
+        let isTotalTimeComplete = true;
 
-        // 2. Best values for each segment in the provided template
+        atomicTemplate.forEach(atomicSeg => {
+            const bestSegmentTime = Math.min(...races.map(race => {
+                const raceInstance = race instanceof Race ? race : new Race(race);
+                const result = raceInstance.calculateIntervals([atomicSeg])[0];
+                return (result && result.time > 0) ? result.time : 999;
+            }));
+
+            if (bestSegmentTime === 999) isTotalTimeComplete = false;
+            else totalTime += bestSegmentTime;
+        });
+
+        // 2. Best values for each segment in the provided template (for UI display)
         const isHigherBetter = metric !== 'time';
         const segments = segmentsTemplate.map(t => {
             const allValues = races.map(race => {
@@ -59,11 +74,14 @@ export class RaceService {
                 return calculated[0] ? calculated[0][metric] : null;
             }).filter(v => v !== null && v > 0);
 
-            if (allValues.length === 0) return 0;
+            if (allValues.length === 0) return null; // Return null if no data
             return isHigherBetter ? Math.max(...allValues) : Math.min(...allValues);
         });
 
-        return { totalTime, segments };
+        return { 
+            totalTime: isTotalTimeComplete ? totalTime : 0, 
+            segments 
+        };
     }
 
     /**

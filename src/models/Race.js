@@ -178,27 +178,30 @@ export class Race {
      */
     calculateIntervals(template = []) {
         if (!template) return [];
+        const EPSILON = 0.1; // 10cm tolerance for distance lookup
         
         return template.map(item => {
-            const mStart = this.milestones.find(m => m.distance === item.start);
-            const mEnd = this.milestones.find(m => m.distance === item.end);
+            const mStart = this.milestones.find(m => Math.abs(m.distance - item.start) < EPSILON);
+            const mEnd = this.milestones.find(m => Math.abs(m.distance - item.end) < EPSILON);
             
             const startTime = item.start === 0 ? (mStart ? mStart.time : 0) : (mStart ? mStart.time : null);
+            
+            // Critical check: if milestones are missing or logic is broken, return null (not 0)
             if (startTime === null || !mEnd || mEnd.time <= startTime) return null;
             
             const time = mEnd.time - startTime;
-            const distance = mEnd.distance - item.start;
+            const distance = mEnd.distance - (mStart ? mStart.distance : 0);
             const speed = distance / time;
             
             // Calculate total steps for this range by summing primitive segments
             let totalSteps = 0;
             let stepsFound = false;
             
-            // Logic: we look at all primitive segments that fit within [start, end]
             const primitives = this.segmentSpeeds;
             primitives.forEach(p => {
                 const [pStart, pEnd] = p.id.split('-').map(Number);
-                if (pStart >= item.start && pEnd <= item.end) {
+                // Check if primitive segment is fully contained within template interval
+                if (pStart >= item.start - EPSILON && pEnd <= item.end + EPSILON) {
                     if (p.steps > 0) {
                         totalSteps += p.steps;
                         stepsFound = true;
@@ -215,7 +218,7 @@ export class Race {
                 frequency: (stepsFound && time > 0) ? totalSteps / time : 0,
                 stepLength: (stepsFound && totalSteps > 0) ? distance / totalSteps : 0
             };
-        }).filter(res => res !== null);
+        }); // Note: we no longer filter nulls here, we let the service handle them
     }
 
     /**
