@@ -92,10 +92,16 @@
           </p>
         </div>
 
-        <div class="bg-blue-600 rounded-2xl p-6 shadow-lg shadow-blue-500/20 text-white">
-          <h3 class="text-sm font-bold uppercase tracking-widest mb-2 opacity-80">Prochainement</h3>
-          <p class="text-sm font-medium mb-4">Analyse de courses avec découpage vidéo.</p>
-          <div class="inline-block px-3 py-1 bg-white/20 rounded-full text-[10px] font-bold">WIP</div>
+        <div class="bg-slate-800 rounded-2xl p-6 shadow-lg shadow-slate-800/20 text-white">
+          <h3 class="text-sm font-bold uppercase tracking-widest mb-2 opacity-80">Scouting Reports</h3>
+          <p class="text-sm font-medium mb-4">Génération de bilans PDF professionnels pour vos athlètes.</p>
+          <div class="inline-block px-3 py-1 bg-white/10 rounded-full text-[10px] font-bold uppercase">Prochainement</div>
+        </div>
+
+        <div class="bg-indigo-600 rounded-2xl p-6 shadow-lg shadow-indigo-600/20 text-white">
+          <h3 class="text-sm font-bold uppercase tracking-widest mb-2 opacity-80">Comparaison Élite</h3>
+          <p class="text-sm font-medium mb-4">Superposez vos courbes avec Michael Johnson ou Sydney McLaughlin-Levrone.</p>
+          <div class="inline-block px-3 py-1 bg-white/20 rounded-full text-[10px] font-bold uppercase">En développement</div>
         </div>
       </div>
     </div>
