@@ -396,7 +396,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import Chart from 'chart.js/auto';
 import { Race } from '../models/Race.js';
 import { Athlete } from '../models/Athlete.js';
@@ -764,12 +764,17 @@ const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString('fr-CH', { 
 
 watch([selectedDiscipline, activeMetric, athlete, comparisonRaceId], runAnalysis);
 
-onMounted(() => {
+const loadInitialData = () => {
   const athleteId = StorageManager.getCurrentAthleteId();
   if (athleteId) {
     athlete.value = Athlete.load(athleteId);
     races.value = Race.getByAthlete(athleteId);
     runAnalysis();
   }
+};
+
+onMounted(() => {
+  loadInitialData();
+  window.addEventListener('athlete-updated', loadInitialData);
 });
 </script>

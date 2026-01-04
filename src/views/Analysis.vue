@@ -366,7 +366,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import Chart from 'chart.js/auto';
 import { Athlete } from '../models/Athlete.js';
 import { PredictionEngine } from '../models/PredictionEngine.js';
@@ -421,7 +421,12 @@ const loadInitialData = () => {
   const savedId = StorageManager.getCurrentAthleteId();
   if (savedId) {
     const loaded = Athlete.load(savedId);
-    if (loaded) athlete.value = loaded;
+    if (loaded) {
+      athlete.value = loaded;
+      if (Object.keys(athlete.value.metrics).length > 0) {
+        runAnalysis();
+      }
+    }
   }
 };
 
@@ -792,8 +797,6 @@ const getDiffData = (row) => {
 
 onMounted(() => {
   loadInitialData();
-  if (Object.keys(athlete.value.metrics).length > 0) {
-    runAnalysis();
-  }
+  window.addEventListener('athlete-updated', loadInitialData);
 });
 </script>

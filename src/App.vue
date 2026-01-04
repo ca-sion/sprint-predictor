@@ -17,12 +17,58 @@
         </nav>
 
         <div class="flex items-center space-x-2 sm:space-x-3">
-          <div v-if="currentAthlete" class="hidden lg:flex items-center px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-bold border border-blue-100 mr-2">
-            {{ currentAthlete.name }}
+          <!-- Athlete Selector -->
+          <div v-if="currentAthlete" class="relative group">
+            <button @click="isAthleteSelectorOpen = !isAthleteSelectorOpen" 
+                    class="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-xs font-bold border border-blue-100 hover:bg-blue-100 transition-all shadow-sm">
+              <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+              <span class="hidden sm:inline">{{ currentAthlete.name }}</span>
+              <span class="sm:hidden uppercase">{{ currentAthleteInitials }}</span>
+              <svg class="w-3 h-3 ml-1 transform transition-transform duration-200" :class="{'rotate-180': isAthleteSelectorOpen}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+
+            <!-- Dropdown -->
+            <transition 
+              enter-active-class="transition duration-100 ease-out"
+              enter-from-class="transform scale-95 opacity-0"
+              enter-to-class="transform scale-100 opacity-100"
+              leave-active-class="transition duration-75 ease-in"
+              leave-from-class="transform scale-100 opacity-100"
+              leave-to-class="transform scale-95 opacity-0"
+            >
+              <div v-if="isAthleteSelectorOpen" 
+                   class="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-[60] overflow-hidden">
+                <div class="px-4 py-2 border-b border-slate-50 mb-1">
+                  <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Changer d'athlète</span>
+                </div>
+                <div class="max-h-60 overflow-y-auto custom-scrollbar">
+                  <button v-for="ath in Object.values(allAthletes)" 
+                          :key="ath.id"
+                          @click="switchAthlete(ath.id)"
+                          class="w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between transition-colors"
+                          :class="ath.id === currentAthlete.id ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'">
+                    {{ ath.name }}
+                    <svg v-if="ath.id === currentAthlete.id" class="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="mt-1 pt-1 border-t border-slate-50">
+                  <router-link to="/" @click="isAthleteSelectorOpen = false" class="flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-blue-600 hover:bg-blue-50 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                    Nouvel athlète
+                  </router-link>
+                </div>
+              </div>
+            </transition>
           </div>
+
+          <!-- Profile Link -->
           <router-link v-if="currentAthlete" :to="`/athlete/${currentAthlete.id}`" class="px-3 py-2 sm:px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs sm:text-sm font-semibold transition-colors shadow-sm">
-            <span class="hidden sm:inline">Profile & PB</span>
-            <span class="sm:hidden">Profil</span>
+            <span class="hidden sm:inline">Profil</span>
+            <svg class="w-4 h-4 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
           </router-link>
           
           <!-- Mobile Menu Button -->
@@ -100,20 +146,40 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { Athlete } from './models/Athlete.js';
 import { StorageManager } from './models/StorageManager.js';
 
 const currentAthlete = ref(null);
+const allAthletes = ref({});
 const isMobileMenuOpen = ref(false);
+const isAthleteSelectorOpen = ref(false);
+
+const currentAthleteInitials = computed(() => {
+  if (!currentAthlete.value?.name) return '??';
+  const parts = currentAthlete.value.name.split(' ');
+  if (parts.length === 1) return parts[0].substring(0, 2);
+  return (parts[0][0] + parts[parts.length - 1][0]);
+});
 
 const updateCurrentAthlete = () => {
+  allAthletes.value = Athlete.getAll();
   const savedId = StorageManager.getCurrentAthleteId();
   if (savedId) {
-    const all = Athlete.getAll();
-    currentAthlete.value = all[savedId] || null;
+    currentAthlete.value = allAthletes.value[savedId] || null;
   } else {
     currentAthlete.value = null;
+  }
+};
+
+const switchAthlete = (id) => {
+  StorageManager.setCurrentAthlete(id);
+  isAthleteSelectorOpen.value = false;
+};
+
+const closeSelector = (e) => {
+  if (isAthleteSelectorOpen.value && !e.target.closest('.group')) {
+    isAthleteSelectorOpen.value = false;
   }
 };
 
@@ -121,11 +187,15 @@ onMounted(() => {
   updateCurrentAthlete();
   window.addEventListener('storage', updateCurrentAthlete);
   window.addEventListener('athlete-updated', updateCurrentAthlete);
+  window.addEventListener('db-updated', updateCurrentAthlete);
+  window.addEventListener('click', closeSelector);
 });
 
 onUnmounted(() => {
   window.removeEventListener('storage', updateCurrentAthlete);
   window.removeEventListener('athlete-updated', updateCurrentAthlete);
+  window.removeEventListener('db-updated', updateCurrentAthlete);
+  window.removeEventListener('click', closeSelector);
 });
 </script>
 
