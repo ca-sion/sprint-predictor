@@ -451,7 +451,7 @@ const runAnalysis = () => {
       prediction.value = engine.predict(athlete.value, targetEvent.value);
       
       // Use CoachingService for interpretation
-      analysis.value = CoachingService.generateAdvice(prediction.value.profile, athlete.value.metrics, athlete.value);
+      analysis.value = CoachingService.generateAdvice(prediction.value.profile, athlete.value.metrics, athlete.value, targetEvent.value);
       prediction.value.analysisGrid = CoachingService.generateAnalysisGrid(athlete.value, prediction.value.time, targetEvent.value, prediction.value.profile);
       prediction.value.consistency = CoachingService.analyzeConsistency(prediction.value.time, targetEvent.value, athlete.value.metrics);
       

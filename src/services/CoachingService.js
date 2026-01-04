@@ -209,15 +209,19 @@ export class CoachingService {
      * Generates coaching advice.
      * Modularized for better maintenance.
      */
-    static generateAdvice(profile, metrics, athlete) {
-        const context = { profile, metrics, athlete, advice: [], strengths: [], weaknesses: [] };
+    static generateAdvice(profile, metrics, athlete, targetEvent = '100m') {
+        const context = { profile, metrics, athlete, targetEvent, advice: [], strengths: [], weaknesses: [] };
 
         this._analyzeFVProfile(context);
         this._analyzeVelocityReserve(context);
+        this._analyzePower(context);
         this._analyzeSSCEfficiency(context);
         this._analyzeVerticalStiffness(context);
         this._analyzeKinematicBalance(context);
         this._analyzeFatigue(context);
+        this._analyzeHurdles(context);
+        this._analyzeSprintProfile(context);
+        this._analyze400mStrategy(context);
 
         return { 
             advice: context.advice, 
@@ -230,16 +234,24 @@ export class CoachingService {
         const { profile, athlete } = ctx;
         const f0_rel = profile.f0;
         const vmax = profile.vmax;
-        const gender = athlete.gender || 'M';
+        const ratio = f0_rel / vmax;
 
+        // Strength: Explosive power
         if (f0_rel > ADVICE_THRESHOLDS.f0.high) {
-            ctx.strengths.push("Profil explosif : Excellente capacité de production de force horizontale initiale.");
+            ctx.strengths.push("Explosivité brute : Capacité de production de force horizontale initiale hors norme.");
+            if (vmax >= 10.5) {
+                ctx.strengths.push("Profil complet : Alliance rare entre accélération foudroyante et haute vélocité.");
+            }
+        }
+
+        // Specific orientation advice
+        if (ratio > ADVICE_THRESHOLDS.fv_ratio.high) {
             if (vmax < ADVICE_THRESHOLDS.vmax.low) {
-                ctx.advice.push("Orientation Vitesse Max : Votre profil est 'Force-Dominant'. Privilégiez le sprint lancé.");
+                ctx.advice.push("Orientation Vitesse Max : Votre profil est 'Force-Dominant'. Privilégiez le sprint lancé pour débloquer votre plafond de vitesse.");
             }
         } else if (f0_rel < ADVICE_THRESHOLDS.f0.low) {
-            ctx.weaknesses.push("Déficit de puissance initiale : Capacité de projection horizontale limitée.");
-            ctx.advice.push("Développement de la Force Explosive : Travaillez la force maximale combinée à des départs avec charges.");
+            ctx.weaknesses.push("Déficit de puissance initiale : Capacité de projection horizontale limitée au départ.");
+            ctx.advice.push("Développement Force-Vitesse : Travaillez la force maximale (Squat/Fentes) combinée à des départs résistés (Heavy Sled).");
         }
     }
 
@@ -251,11 +263,22 @@ export class CoachingService {
         const vri = profile.vmax / vAvg;
 
         if (vri > ADVICE_THRESHOLDS.vri.high) {
-            ctx.weaknesses.push("Sous-exploitation de la Vmax : Écart trop important entre Vmax et chrono.");
-            ctx.advice.push("Priorité Endurance de Vitesse : Intégrez des répétitions de 80m-120m à haute intensité.");
+            ctx.weaknesses.push("Sous-exploitation de la Vmax : Écart trop important entre votre pointe de vitesse et votre chrono.");
+            ctx.advice.push("Priorité Endurance de Vitesse : Intégrez des répétitions de 80m-120m à haute intensité (95%+) pour maintenir votre vélocité plus longtemps.");
         } else if (vri < ADVICE_THRESHOLDS.vri.low && vri > 0) {
-            ctx.strengths.push("Efficacité temporelle : Optimisation remarquable de la Vmax sur la distance.");
-            ctx.advice.push("Élévation du Plafond : Progression via l'augmentation de la vitesse de pointe absolue.");
+            ctx.strengths.push("Efficacité temporelle : Capacité remarquable à maintenir une haute fraction de Vmax sur la distance.");
+            ctx.advice.push("Élévation du Plafond : Votre endurance est optimale, progressez désormais en augmentant votre vitesse de pointe absolue.");
+        }
+    }
+
+    static _analyzePower(ctx) {
+        const { profile, athlete } = ctx;
+        const bench = this.getBenchmarkForAthlete(athlete);
+        
+        if (profile.pmax > bench.pmax + 2) {
+            ctx.strengths.push(`Puissance relative supérieure : Votre ratio Watts/kg (${profile.pmax.toFixed(1)}) est une force majeure.`);
+        } else if (profile.pmax < bench.pmax - 3) {
+            ctx.weaknesses.push("Déficit de puissance systémique : Puissance maximale produite insuffisante pour la catégorie.");
         }
     }
 
@@ -265,10 +288,10 @@ export class CoachingService {
         if (prestigeIndex <= 0) return;
 
         if (prestigeIndex < ADVICE_THRESHOLDS.prestige.low) {
-            ctx.weaknesses.push("Déficit de réactivité (SSC lent).");
-            ctx.advice.push("Travail Pliométrique : Accentuez la pliométrie basse.");
+            ctx.weaknesses.push("Déficit de réactivité (SSC lent) : Temps de transition excentrique/concentrique trop long.");
+            ctx.advice.push("Travail Pliométrique : Accentuez la pliométrie basse (Pogos, corde à sauter) pour améliorer la raideur de cheville.");
         } else if (prestigeIndex > ADVICE_THRESHOLDS.prestige.high) {
-            ctx.strengths.push("Réactivité élastique supérieure (SSC rapide).");
+            ctx.strengths.push("Réactivité élastique supérieure (SSC rapide) : Excellente utilisation de l'énergie stockée (Prestige Index).");
         }
     }
 
@@ -281,13 +304,13 @@ export class CoachingService {
         const ct = raw_ct > 10 ? raw_ct : raw_ct * 1000;
         const match = CONTACT_TIME_TARGETS[gender]?.find(t => ct >= t.min && ct <= t.max);
         
-        if (match) ctx.advice.push(`Analyse de l'appui : Votre temps de contact est '${match.label}'.`);
+        if (match) ctx.advice.push(`Analyse de l'appui : Votre temps de contact est classé '${match.label}'.`);
         
         if (ct > ADVICE_THRESHOLDS.stiffness.high_ct && profile.vmax > ADVICE_THRESHOLDS.stiffness.vmax_threshold) {
-            ctx.weaknesses.push("Temps de sol excessifs : Manque de raideur verticale.");
-            ctx.advice.push("Renforcement de la Stiffness : Intégrez des pogos et multibonds.");
+            ctx.weaknesses.push("Temps de sol excessifs : Manque de raideur (stiffness) verticale à haute vitesse.");
+            ctx.advice.push("Renforcement de la Stiffness : Intégrez des bonds horizontaux et des montées de genoux 'griffées'.");
         } else if (ct < ADVICE_THRESHOLDS.stiffness.elite_ct) {
-            ctx.strengths.push("Stiffness verticale d'élite.");
+            ctx.strengths.push("Stiffness d'élite : Temps de contact au sol très brefs, signe d'une grande efficacité mécanique.");
         }
     }
 
@@ -300,11 +323,13 @@ export class CoachingService {
         const thresholds = ADVICE_THRESHOLDS.kinematic.freq[gender];
 
         if (freq < thresholds.low) {
-            ctx.advice.push("Optimisation Fréquence : Travail de vélocité gestuelle conseillé.");
+            ctx.weaknesses.push("Fréquence gestuelle basse.");
+            ctx.advice.push("Optimisation Vélocité : Travaillez la vitesse de pied et la coordination segmentaire (survitesse).");
         } else if (freq > thresholds.high) {
-            ctx.advice.push("Optimisation Amplitude : Travaillez la force de poussée horizontale.");
+            ctx.weaknesses.push("Amplitude de foulée restreinte.");
+            ctx.advice.push("Optimisation Amplitude : Travaillez la force de poussée et l'ouverture de hanche (amplitude active).");
         } else if (freq >= thresholds.opt_min && freq <= thresholds.opt_max) {
-            ctx.strengths.push("Équilibre cinématique optimal.");
+            ctx.strengths.push("Équilibre cinématique optimal : Rapport fréquence/amplitude idéal pour la performance.");
         }
     }
 
@@ -313,6 +338,92 @@ export class CoachingService {
         if (profile.endurance > ADVICE_THRESHOLDS.fatigue.high) {
             ctx.weaknesses.push("Décroissance de vitesse précoce.");
             ctx.advice.push("Capacité Tampon : Intégrez des séances de résistance lactique.");
+        }
+    }
+
+    static _analyzeHurdles(ctx) {
+        const { metrics, targetEvent } = ctx;
+        const isShortHurdles = ['50mH', '60mH', '100mH', '110mH'].includes(targetEvent);
+        const isLongHurdles = targetEvent === '400mH';
+
+        if (isShortHurdles) {
+            const pbFlat = metrics.pb_100m || (metrics.pb_60m ? metrics.pb_60m * 1.55 : null);
+            const pbHurdles = metrics[`pb_${targetEvent.toLowerCase()}`];
+
+            if (pbFlat && pbHurdles && targetEvent.includes('100') || targetEvent.includes('110')) {
+                const ie = pbHurdles - pbFlat;
+                if (ie < ADVICE_THRESHOLDS.hurdles.ie_short.excellent) {
+                    ctx.strengths.push(`Technique de franchissement d'élite (IE: +${ie.toFixed(2)}s).`);
+                    ctx.advice.push("Priorité Vitesse Plate : Votre technique est saturée, gagnez en vitesse pure pour progresser.");
+                } else if (ie > ADVICE_THRESHOLDS.hurdles.ie_short.poor) {
+                    ctx.weaknesses.push(`Déficit technique important (IE: +${ie.toFixed(2)}s).`);
+                    ctx.advice.push("Focus Technique : Travaillez la jambe de retour et l'engagement du bassin au-dessus de la haie.");
+                }
+            }
+        }
+
+        if (isLongHurdles) {
+            const pb400 = metrics.pb_400m;
+            const pb400H = metrics.pb_400mh;
+
+            if (pb400 && pb400H) {
+                const diff = pb400H - pb400;
+                if (diff < ADVICE_THRESHOLDS.hurdles.diff_long.excellent) {
+                    ctx.strengths.push("Efficacité rythmique supérieure sur 400mH.");
+                } else if (diff > ADVICE_THRESHOLDS.hurdles.diff_long.poor) {
+                    ctx.weaknesses.push("Gestion du rythme ou endurance spécifique 400mH perfectible.");
+                    ctx.advice.push("Schéma de course : Travaillez la transition de rythme entre la 5ème et la 8ème haie.");
+                }
+            }
+        }
+    }
+
+    static _analyzeSprintProfile(ctx) {
+        const { metrics } = ctx;
+        const pb60 = metrics.pb_60m;
+        const pb100 = metrics.pb_100m;
+        const pb200 = metrics.pb_200m;
+
+        // Short Sprint Profile (60 vs 100)
+        if (pb60 && pb100) {
+            const ratio = pb100 / pb60;
+            if (ratio < ADVICE_THRESHOLDS.sprint_ratios.short_long.power) {
+                ctx.strengths.push("Profil 'Démarreur' : Excellente mise en action et maintien de la vitesse sur 60m.");
+                ctx.advice.push("Focus Fin de Course : Travaillez la vélocité terminale pour mieux finir vos 100m.");
+            } else if (ratio > ADVICE_THRESHOLDS.sprint_ratios.short_long.endurance) {
+                ctx.strengths.push("Profil 'Finisseur' : Capacité d'accélération prolongée.");
+                ctx.advice.push("Focus Départ : Optimisez votre poussée dans les blocs pour abaisser votre chrono de base.");
+            }
+        }
+
+        // Long Sprint Profile (100 vs 200)
+        if (pb100 && pb200) {
+            const ratio = pb200 / pb100;
+            if (ratio < ADVICE_THRESHOLDS.sprint_ratios.speed_endurance.speed) {
+                ctx.strengths.push("Haute endurance de vitesse : Très faible déperdition entre le 100m et le 200m.");
+            } else if (ratio > ADVICE_THRESHOLDS.sprint_ratios.speed_endurance.endurance) {
+                ctx.weaknesses.push("Déficit d'endurance lactique : Chute de vitesse importante sur le deuxième 100m.");
+                ctx.advice.push("Travail Spécifique : Intégrez des séances de 'Tempo' et de résistance à haute intensité.");
+            }
+        }
+    }
+
+    static _analyze400mStrategy(ctx) {
+        const { metrics, targetEvent } = ctx;
+        if (targetEvent !== '400m') return;
+
+        const pb200 = metrics.pb_200m;
+        const pb400 = metrics.pb_400m;
+
+        if (pb200 && pb400) {
+            const margin = pb400 - (pb200 * 2);
+            if (margin < ADVICE_THRESHOLDS.long_sprint.asr_margin.speed) {
+                ctx.strengths.push("Résistance exceptionnelle sur 400m.");
+                ctx.advice.push("Plafond de Vitesse : Votre endurance est déjà très haute, progressez en améliorant votre record sur 200m.");
+            } else if (margin > ADVICE_THRESHOLDS.long_sprint.asr_margin.resistant) {
+                ctx.weaknesses.push("Réserve de vitesse sous-exploitée : Écart trop important entre votre 200m et votre 400m.");
+                ctx.advice.push("Focus Aérobie/Lactique : Augmentez le volume de vos séances de résistance spécifique 400m.");
+            }
         }
     }
 

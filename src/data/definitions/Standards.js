@@ -300,7 +300,18 @@ export const ADVICE_THRESHOLDS = {
         }
     },
     fv_ratio: { high: 1.15, low: 0.85 },
-    force_application: { high_rf: 0.48 } // RF max theoretical estimation
+    force_application: { high_rf: 0.48 }, // RF max theoretical estimation
+    hurdles: {
+        ie_short: { excellent: 0.90, good: 1.10, poor: 1.35 },
+        diff_long: { excellent: 2.5, good: 3.5, poor: 5.0 }
+    },
+    sprint_ratios: {
+        short_long: { power: 1.52, endurance: 1.58 }, // Ratio 100m/60m
+        speed_endurance: { speed: 1.98, endurance: 2.05 } // Ratio 200m/100m
+    },
+    long_sprint: {
+        asr_margin: { speed: 3.5, balanced: 4.2, resistant: 5.0 } // 400m vs 2x200m
+    }
 };
 
 export const QUALITY_BENCHMARKS = {
