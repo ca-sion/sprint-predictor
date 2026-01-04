@@ -37,7 +37,7 @@
           </div>
         </div>
 
-        <!-- Discipline Selector Moved to Header Right -->
+        <!-- Discipline Selector -->
         <div class="flex items-center gap-3">
           <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest hidden lg:block">Discipline</span>
           <div class="flex bg-slate-100 p-1 rounded-xl">
@@ -59,6 +59,26 @@
     </div>
 
     <div v-else class="space-y-6">
+      <!-- Comparison Chart (Ghost View) -->
+      <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm">
+         <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest">Théorie vs Réalité</h3>
+            <div class="flex items-center gap-4">
+              <div class="flex items-center gap-1.5">
+                <div class="w-2 h-2 rounded-full bg-blue-400/50"></div>
+                <span class="text-[10px] font-bold text-slate-500 uppercase">Potentiel</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <div class="w-2 h-2 rounded-full bg-blue-600"></div>
+                <span class="text-[10px] font-bold text-slate-500 uppercase">Record virtuel (VB)</span>
+              </div>
+            </div>
+         </div>
+         <div class="h-56 w-full relative">
+            <canvas ref="comparisonChartCanvas"></canvas>
+         </div>
+      </div>
+
       <!-- Controls Toolbar -->
       <div class="flex flex-wrap items-center justify-between bg-white p-4 rounded-2xl shadow-sm border border-slate-100 gap-4">
         <div class="flex items-center gap-6">
@@ -107,7 +127,7 @@
       <!-- 1. GRID VIEW -->
       <div v-if="layoutMode === 'grid'" class="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
         <div class="flex border-b border-slate-100 bg-slate-50/80 backdrop-blur-sm sticky top-0 z-20">
-          <div class="w-32 flex-shrink-0 p-4 border-r border-slate-100"><span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Date / Chrono</span></div>
+          <div class="w-40 flex-shrink-0 p-4 border-r border-slate-100"><span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Type / Chrono</span></div>
           <div class="flex-1 flex">
             <div v-for="(seg, idx) in templateSegments" :key="idx" class="flex-1 p-2 border-r border-slate-100 last:border-0 flex items-center justify-center">
               <span class="text-[9px] font-black text-slate-400 uppercase">{{ seg.label }}</span>
@@ -115,22 +135,58 @@
           </div>
         </div>
 
-        <!-- PB Row -->
-        <div v-if="pbRace" class="flex relative z-10 bg-yellow-50/50 group border-b-2 border-yellow-200">
-           <div class="absolute left-0 top-0 bottom-0 w-1 bg-yellow-400"></div>
-           <div class="w-32 flex-shrink-0 p-4 border-r border-yellow-100 flex flex-col justify-center bg-yellow-50/30">
-            <div class="flex items-center gap-1 mb-1">
-              <span class="text-[9px] font-black bg-yellow-400 text-white px-1.5 py-0.5 rounded shadow-sm">PB</span>
-              <span class="text-[10px] font-bold text-slate-900 truncate">{{ formatDate(pbRace.date) }}</span>
+        <!-- SPECIAL ROWS: POTENTIAL & VIRTUAL BEST -->
+        <div class="divide-y divide-slate-100 bg-slate-50/30">
+          
+          <!-- A. POTENTIEL THÉORIQUE -->
+          <div v-if="potentialRow" class="flex border-b border-blue-100 bg-blue-50/30 relative">
+            <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-400"></div>
+            <div class="w-40 flex-shrink-0 p-4 border-r border-blue-100 flex flex-col justify-center">
+              <span class="text-[9px] font-black text-blue-500 uppercase tracking-tighter mb-1">Potentiel (Théorie)</span>
+              <span class="text-xl font-black text-blue-600 tabular-nums">{{ potentialRow.totalTime.toFixed(2) }}s</span>
             </div>
-            <span class="text-xl font-black text-slate-900 tabular-nums tracking-tight">{{ getRaceTotalTime(pbRace).toFixed(2) }}s</span>
+            <div class="flex-1 flex">
+              <div v-for="(val, idx) in potentialRow.segments" :key="'pot-'+idx" class="flex-1 border-r border-blue-100/30 last:border-0 p-1">
+                <div class="w-full h-full rounded flex items-center justify-center border border-blue-200/50 bg-white/50">
+                  <span class="text-xs font-black text-blue-500">{{ formatMetricValue(val) }}</span>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="flex-1 flex">
-            <div v-for="(tSeg, idx) in templateSegments" :key="idx" class="flex-1 border-r border-yellow-100/50 last:border-0 relative group/cell p-1">
-              <div v-if="getRaceSegmentData(pbRace, idx)" 
-                   class="w-full h-full rounded flex items-center justify-center border border-yellow-400/30 shadow-inner transition-all duration-300"
-                   :style="getGridCellStyles(pbRace, idx)">
-                <span class="text-xs font-black tabular-nums">{{ formatMetricValue(getRaceSegmentData(pbRace, idx)[activeMetric], activeMetric) }}</span>
+
+          <!-- B. VIRTUAL BEST (TERRAIN) -->
+          <div v-if="virtualBestRow" class="flex border-b border-purple-100 bg-purple-50/30 relative">
+            <div class="absolute left-0 top-0 bottom-0 w-1 bg-purple-400"></div>
+            <div class="w-40 flex-shrink-0 p-4 border-r border-purple-100 flex flex-col justify-center">
+              <span class="text-[9px] font-black text-purple-500 uppercase tracking-tighter mb-1">Record Virtuel (VB)</span>
+              <span class="text-xl font-black text-purple-600 tabular-nums">{{ virtualBestRow.totalTime.toFixed(2) }}s</span>
+            </div>
+            <div class="flex-1 flex">
+              <div v-for="(val, idx) in virtualBestRow.segments" :key="'vb-'+idx" class="flex-1 border-r border-purple-100/30 last:border-0 p-1">
+                <div class="w-full h-full rounded flex items-center justify-center border border-purple-200/50 bg-white/50">
+                  <span class="text-xs font-black text-purple-500">{{ formatMetricValue(val) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- C. PB REAL ROW -->
+          <div v-if="pbRace" class="flex relative z-10 bg-yellow-50/50 border-b-2 border-yellow-200">
+            <div class="absolute left-0 top-0 bottom-0 w-1 bg-yellow-400"></div>
+            <div class="w-40 flex-shrink-0 p-4 border-r border-yellow-100 flex flex-col justify-center">
+              <div class="flex items-center gap-1 mb-1">
+                <span class="text-[8px] font-black bg-yellow-400 text-white px-1.5 py-0.5 rounded shadow-sm">RECORD</span>
+                <span class="text-[10px] font-bold text-slate-500">{{ formatDate(pbRace.date) }}</span>
+              </div>
+              <span class="text-xl font-black text-slate-900 tabular-nums">{{ getRaceTotalTime(pbRace).toFixed(2) }}s</span>
+            </div>
+            <div class="flex-1 flex">
+              <div v-for="(tSeg, idx) in templateSegments" :key="'pb-seg-'+idx" class="flex-1 border-r border-yellow-100/50 last:border-0 p-1">
+                <div v-if="getRaceSegmentData(pbRace, idx)" 
+                    class="w-full h-full rounded flex items-center justify-center border border-yellow-400/30 shadow-inner"
+                    :style="getGridCellStyles(pbRace, idx)">
+                  <span class="text-xs font-black">{{ formatMetricValue(getRaceSegmentData(pbRace, idx)[activeMetric]) }}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -139,35 +195,30 @@
         <!-- Sorted Races -->
         <div class="divide-y divide-slate-100">
           <div v-for="race in sortedRaces" :key="race.id" class="flex hover:bg-slate-50 transition-colors group relative">
-             <div class="w-32 flex-shrink-0 p-4 border-r border-slate-100 flex flex-col justify-center">
-              <span class="text-[10px] font-bold text-slate-500 mb-1 truncate" :title="race.name">{{ formatDate(race.date) }}</span>
-              <div class="flex items-baseline gap-2">
+             <div class="w-40 flex-shrink-0 p-4 border-r border-slate-100 flex flex-col justify-center">
+              <span class="text-[10px] font-bold text-slate-500 mb-1 truncate">{{ formatDate(race.date) }}</span>
+              <div class="flex items-baseline gap-2 flex-wrap">
                 <span class="text-sm font-black text-slate-800 tabular-nums">{{ getRaceTotalTime(race).toFixed(2) }}s</span>
-                <span v-if="pbRace" :class="['text-[9px] font-bold', getRaceTotalTime(race) > getRaceTotalTime(pbRace) ? 'text-red-500' : 'text-green-500']">
+                
+                <!-- PB Validation Button -->
+                <button v-if="isPotentialNewPB(race)" 
+                        @click="manualSyncPB(race)"
+                        title="Mettre à jour le record du profil"
+                        class="px-1.5 py-0.5 bg-emerald-500 text-white text-[8px] font-black uppercase rounded animate-pulse hover:bg-emerald-600 transition-colors">
+                  Nouveau PB ?
+                </button>
+
+                <span v-if="pbRace && !isPotentialNewPB(race)" :class="['text-[9px] font-bold', getRaceTotalTime(race) > getRaceTotalTime(pbRace) ? 'text-red-500' : 'text-green-500']">
                   {{ formatDiff(getRaceTotalTime(race) - getRaceTotalTime(pbRace)) }}
                 </span>
               </div>
             </div>
-            <div class="flex-1 flex h-16">
+            <div class="flex-1 flex h-14">
               <div v-for="(tSeg, idx) in templateSegments" :key="idx" class="flex-1 border-r border-slate-100 last:border-0 relative group/cell">
                 <div v-if="getRaceSegmentData(race, idx)" 
-                     class="w-full h-full transition-all duration-300 flex items-center justify-center relative overflow-visible" 
+                     class="w-full h-full transition-all duration-300 flex items-center justify-center relative" 
                      :style="getGridCellStyles(race, idx)">
-                   <div class="z-0 pointer-events-none">
-                     <span class="text-xs font-black">{{ formatMetricValue(getRaceSegmentData(race, idx)[activeMetric], activeMetric) }}</span>
-                   </div>
-                   
-                   <!-- Tooltip -->
-                   <div v-if="getRaceSegmentData(race, idx)" class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-slate-900 text-white text-xs rounded-xl shadow-xl border border-slate-700 p-3 opacity-0 group-hover/cell:opacity-100 transition-opacity z-50 pointer-events-none">
-                      <div class="font-bold text-slate-400 uppercase text-[9px] mb-2 border-b border-slate-700 pb-1">{{ templateSegments[idx]?.label }}</div>
-                      <div class="space-y-1.5">
-                        <div class="flex justify-between items-center"><span class="text-slate-400 text-[10px]">Temps</span><span class="font-mono font-bold">{{ formatValue(getRaceSegmentData(race, idx).time) }}s</span></div>
-                        <div class="flex justify-between items-center"><span class="text-slate-400 text-[10px]">Vitesse</span><div class="flex items-center gap-2"><span class="font-mono font-bold text-blue-400">{{ formatValue(getRaceSegmentData(race, idx).speed) }}</span><span v-if="pbRace" :class="getDiffClass(getRaceSegmentData(race, idx).speed - getPbValue(idx, 'speed'), true)">{{ formatDiff(getRaceSegmentData(race, idx).speed - getPbValue(idx, 'speed')) }}</span></div></div>
-                        <div class="flex justify-between items-center"><span class="text-slate-400 text-[10px]">Fréq.</span><div class="flex items-center gap-2"><span class="font-mono font-bold text-purple-400">{{ getRaceSegmentData(race, idx).frequency > 0 ? formatValue(getRaceSegmentData(race, idx).frequency) : '-' }}</span><span v-if="pbRace && getRaceSegmentData(race, idx).frequency > 0" :class="getDiffClass(getRaceSegmentData(race, idx).frequency - getPbValue(idx, 'frequency'), true)">{{ formatDiff(getRaceSegmentData(race, idx).frequency - getPbValue(idx, 'frequency')) }}</span></div></div>
-                        <div class="flex justify-between items-center"><span class="text-slate-400 text-[10px]">Ampl.</span><div class="flex items-center gap-2"><span class="font-mono font-bold text-emerald-400">{{ getRaceSegmentData(race, idx).stepLength > 0 ? formatValue(getRaceSegmentData(race, idx).stepLength) : '-' }}</span><span v-if="pbRace && getRaceSegmentData(race, idx).stepLength > 0" :class="getDiffClass(getRaceSegmentData(race, idx).stepLength - getPbValue(idx, 'stepLength'), true)">{{ formatDiff(getRaceSegmentData(race, idx).stepLength - getPbValue(idx, 'stepLength')) }}</span></div></div>
-                      </div>
-                      <div class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-900"></div>
-                   </div>
+                   <span class="text-xs font-black">{{ formatMetricValue(getRaceSegmentData(race, idx)[activeMetric]) }}</span>
                 </div>
               </div>
             </div>
@@ -177,6 +228,64 @@
 
       <!-- 2. TIMELINE VIEW -->
       <div v-else class="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden divide-y divide-slate-100">
+        <!-- A. POTENTIEL THÉORIQUE (TIMELINE) -->
+        <div v-if="potentialRow" class="flex items-center p-4 bg-blue-50/30 relative group border-b border-blue-100">
+          <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-400"></div>
+          <div class="w-48 flex-shrink-0 pr-6">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-[8px] font-black bg-blue-500 text-white px-1.5 py-0.5 rounded uppercase shadow-sm">Théorie</span>
+            </div>
+            <div class="flex items-baseline gap-2">
+               <span class="text-2xl font-black text-blue-600 leading-none">{{ potentialRow.totalTime.toFixed(2) }}<span class="text-xs ml-0.5 opacity-40">s</span></span>
+               <span v-if="pbRace" class="text-xs font-bold text-blue-500">
+                  {{ formatDiff(potentialRow.totalTime - getRaceTotalTime(pbRace)) }}
+               </span>
+            </div>
+            <span class="text-[10px] font-black text-blue-400/80 uppercase tracking-widest block mt-1">Potentiel théorique</span>
+          </div>
+
+          <div class="flex-1 relative py-4">
+            <div class="flex h-6 w-full bg-blue-100/30 rounded-full overflow-hidden shadow-inner relative z-20 border-2 border-blue-200/50">
+              <div v-for="(seg, sIdx) in potentialTimelineSegments" :key="'seg-pot-'+sIdx"
+                   class="h-full relative border-r border-white/20 last:border-0"
+                   :style="{ 
+                     width: (seg.time / maxTotalTime) * 100 + '%',
+                     ...getCellStyles(seg[activeMetric], virtualBestSegments[sIdx], activeMetric)
+                   }">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- B. VIRTUAL BEST (TIMELINE) -->
+        <div v-if="virtualBestRow" class="flex items-center p-4 bg-purple-50/30 relative group border-b border-purple-100">
+          <div class="absolute left-0 top-0 bottom-0 w-1 bg-purple-400"></div>
+          <div class="w-48 flex-shrink-0 pr-6">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-[8px] font-black bg-purple-500 text-white px-1.5 py-0.5 rounded uppercase shadow-sm">VB</span>
+            </div>
+            <div class="flex items-baseline gap-2">
+               <span class="text-2xl font-black text-purple-600 leading-none">{{ virtualBestRow.totalTime.toFixed(2) }}<span class="text-xs ml-0.5 opacity-40">s</span></span>
+               <span v-if="pbRace" class="text-xs font-bold text-purple-500">
+                  {{ formatDiff(virtualBestRow.totalTime - getRaceTotalTime(pbRace)) }}
+               </span>
+            </div>
+            <span class="text-[10px] font-black text-purple-400/80 uppercase tracking-widest block mt-1">Record Virtuel (Terrain)</span>
+          </div>
+
+          <div class="flex-1 relative py-4">
+            <div class="flex h-6 w-full bg-purple-100/30 rounded-full overflow-hidden shadow-inner relative z-20 border-2 border-purple-200/50">
+              <div v-for="(seg, sIdx) in virtualBestTimelineSegments" :key="'seg-vb-'+sIdx"
+                   class="h-full relative border-r border-white/20 last:border-0"
+                   :style="{ 
+                     width: (seg.time / maxTotalTime) * 100 + '%',
+                     ...getCellStyles(seg[activeMetric], virtualBestSegments[sIdx], activeMetric)
+                   }">
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div v-for="race in [pbRace, ...sortedRaces].filter(r => r)" :key="race.id" 
              :class="['flex items-center p-4 hover:bg-slate-50 transition-all', race.id === pbRace?.id ? 'bg-yellow-50/50' : '']">
           
@@ -198,41 +307,20 @@
             <!-- Ghost Lines (PB Reference Markers) -->
             <template v-if="pbRace">
               <div v-for="(marker, mIdx) in getPbLinearMarkers()" :key="'marker-'+mIdx" 
-                   :class="['absolute top-0 bottom-0 border-l-2 border-dotted z-10', , race.id === pbRace?.id ? 'border-slate-900/10' : 'border-slate-900/20']"
+                   :class="['absolute top-0 bottom-0 border-l-2 border-dotted z-10', race.id === pbRace?.id ? 'border-slate-900/10' : 'border-slate-900/20']"
                    :style="{ left: marker.percent + '%' }">
                 <span class="absolute -bottom-1 -left-4 w-8 text-center text-[7px] font-black text-slate-500 uppercase leading-none">{{ marker.label }}</span>
               </div>
             </template>
 
-            <!-- Actual Race Segments (Linear) -->
             <div class="flex h-6 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner relative z-20 border-2 border-slate-200">
-              <div v-for="(seg, sIdx) in getLinearSegments(race)" :key="'seg-'+sIdx"
+              <div v-for="(seg, sIdx) in getTimelineSegmentsForRace(race)" :key="'seg-'+sIdx"
                    class="h-full relative transition-all group/timeline border-r border-white/5 last:border-0"
-                   :style="{ width: (seg.time / maxTotalTime) * 100 + '%', ...getLinearCellStyles(seg, race) }">
-                
-                <div class="absolute top-full left-1/2 -translate-x-1/2 pt-3 opacity-0 group-hover/timeline:opacity-100 transition-opacity z-50 pointer-events-none">
-                   <div class="bg-slate-900 text-white px-3 py-2 rounded-xl text-[10px] font-black flex flex-col gap-1 whitespace-nowrap shadow-2xl border border-slate-700">
-                      <span class="text-blue-400 border-b border-white/10 pb-1 mb-1">{{ seg.label }}</span>
-                      <div class="grid grid-cols-2 gap-x-4 gap-y-1">
-                        <span>Vitesse: {{ seg.speed.toFixed(2) }} m/s</span>
-                        <span>Temps: {{ seg.time.toFixed(2) }}s</span>
-                        <span v-if="seg.frequency > 0">Fréq: {{ seg.frequency.toFixed(2) }} Hz</span>
-                        <span v-if="seg.stepLength > 0">Ampl: {{ seg.stepLength.toFixed(2) }} m</span>
-                      </div>
-                   </div>
-                </div>
+                   :style="{ 
+                     width: (seg.time / maxTotalTime) * 100 + '%', 
+                     ...getCellStyles(seg[activeMetric], virtualBestSegments[sIdx], activeMetric) 
+                   }">
               </div>
-            </div>
-
-            <!-- Labels dessous (Métrique dynamique) -->
-            <div class="flex w-full mt-2 px-1">
-               <div v-for="(seg, sIdx) in getLinearSegments(race)" :key="'txt-'+sIdx"
-                    :style="{ width: (seg.time / maxTotalTime) * 100 + '%' }"
-                    class="text-center overflow-hidden">
-                  <span class="text-[10px] font-black text-slate-900 leading-none">
-                    {{ formatMetricValue(seg[activeMetric], activeMetric) }}
-                  </span>
-               </div>
             </div>
           </div>
         </div>
@@ -242,9 +330,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, nextTick, watch } from 'vue';
+import Chart from 'chart.js/auto';
 import { Race } from '../models/Race.js';
 import { Athlete } from '../models/Athlete.js';
+import { PredictionEngine } from '../models/PredictionEngine.js';
 import { getDynamicAnalysisTemplate } from '../data/ReferenceData.js';
 
 const athlete = ref(null);
@@ -254,6 +344,11 @@ const activeMetric = ref('speed');
 const viewMode = ref('heatmap');
 const layoutMode = ref('timeline');
 
+const engine = new PredictionEngine();
+const prediction = ref(null);
+const comparisonChartCanvas = ref(null);
+let comparisonChart = null;
+
 const metrics = [
   { id: 'speed', label: 'Vitesse' },
   { id: 'frequency', label: 'Fréq.' },
@@ -261,6 +356,153 @@ const metrics = [
   { id: 'time', label: 'Temps' }
 ];
 
+// --- PB SYNC LOGIC (Manual Validation) ---
+const isPotentialNewPB = (race) => {
+  if (!athlete.value) return false;
+  const raceTime = getRaceTotalTime(race);
+  if (raceTime <= 0) return false;
+  const pbKey = `pb_${selectedDiscipline.value.toLowerCase()}`;
+  const profilePB = athlete.value.metrics[pbKey] || 999;
+  return raceTime < (profilePB - 0.005);
+};
+
+const manualSyncPB = (race) => {
+  if (!athlete.value) return;
+  const raceTime = getRaceTotalTime(race);
+  const pbKey = `pb_${selectedDiscipline.value.toLowerCase()}`;
+  athlete.value.metrics[pbKey] = parseFloat(raceTime.toFixed(2));
+  athlete.value.save();
+  runAnalysis();
+  alert(`Record personnel (${selectedDiscipline.value}) mis à jour dans le profil !`);
+};
+
+// --- VIRTUAL ROWS LOGIC ---
+const potentialRow = computed(() => {
+  if (!prediction.value) return null;
+  
+  const theorySegments = templateSegments.value.map(t => {
+    const match = prediction.value.splits.find(ts => Math.abs(ts.distance - t.end) < 5);
+    if (!match) return 0;
+    
+    if (activeMetric.value === 'speed') return match.velocity;
+    if (activeMetric.value === 'time') return match.segmentTime;
+    return 0;
+  });
+
+  return {
+    totalTime: parseFloat(prediction.value.time),
+    segments: theorySegments
+  };
+});
+
+const virtualBestRow = computed(() => {
+  if (!filteredRaces.value.length) return null;
+  
+  // 1. Calculate TRUE Virtual Best total time using primitive segments (non-overlapping)
+  const primitiveBestTimes = new Map();
+  filteredRaces.value.forEach(race => {
+    const raceInstance = race instanceof Race ? race : new Race(race);
+    raceInstance.segmentSpeeds.forEach(seg => {
+      const currentBest = primitiveBestTimes.get(seg.id) || 999;
+      if (seg.time > 0 && seg.time < currentBest) {
+        primitiveBestTimes.set(seg.id, seg.time);
+      }
+    });
+  });
+  const totalTime = Array.from(primitiveBestTimes.values()).reduce((a, b) => a + b, 0);
+
+  // 2. Calculate values for the grid display (templateSegments)
+  const isHigherBetter = activeMetric.value !== 'time';
+  const segments = templateSegments.value.map((t, idx) => {
+    const allSegs = filteredRaces.value.map(race => {
+        const raceInstance = race instanceof Race ? race : new Race(race);
+        const calculated = raceInstance.calculateIntervals(templateSegments.value);
+        return calculated[idx];
+    }).filter(s => s && s.time > 0);
+
+    if (!allSegs.length) return 0;
+    
+    return isHigherBetter 
+        ? Math.max(...allSegs.map(s => s[activeMetric.value])) 
+        : Math.min(...allSegs.map(s => s[activeMetric.value]));
+  });
+
+  return { totalTime, segments };
+});
+
+const virtualBestSegments = computed(() => virtualBestRow.value?.segments || []);
+
+const getPbLinearMarkers = () => {
+  if (!pbRace.value) return [];
+  let currentTime = 0;
+  const raceInstance = pbRace.value instanceof Race ? pbRace.value : new Race(pbRace.value);
+  return raceInstance.segmentSpeeds.map(seg => {
+    currentTime += seg.time;
+    return { label: seg.label, percent: (currentTime / maxTotalTime.value) * 100 };
+  });
+};
+
+// --- CHART & ENGINE ---
+const runAnalysis = () => {
+  if (!athlete.value) return;
+  try {
+    prediction.value = engine.predict(athlete.value, selectedDiscipline.value);
+    nextTick(() => renderComparisonChart());
+  } catch (e) { console.error(e); }
+};
+
+const renderComparisonChart = () => {
+  const ctx = comparisonChartCanvas.value?.getContext('2d');
+  if (!ctx || !prediction.value) return;
+  if (comparisonChart) comparisonChart.destroy();
+
+  const labels = templateSegments.value.map(s => s.label);
+  const theoryData = potentialRow.value?.segments || [];
+  const vbData = virtualBestRow.value?.segments || [];
+
+  comparisonChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Potentiel (Théorie)',
+          data: theoryData,
+          borderColor: 'rgba(59, 130, 246, 0.4)',
+          borderDash: [5, 5],
+          backgroundColor: 'transparent',
+          tension: 0.4,
+          pointRadius: 0
+        },
+        {
+          label: 'Réalité (VB)',
+          data: vbData,
+          borderColor: '#2563eb',
+          backgroundColor: 'rgba(37, 99, 235, 0.1)',
+          fill: true,
+          tension: 0.4,
+          pointRadius: 4,
+          pointBackgroundColor: '#2563eb'
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { 
+            grid: { color: '#f1f5f9' }, 
+            title: { display: true, text: activeMetric.value === 'speed' ? 'm/s' : 's', font: { size: 10 } },
+            beginAtZero: false
+        },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+};
+
+// --- DATA ACCESS HELPERS ---
 const availableDisciplines = computed(() => {
   const s = new Set(races.value.map(r => r.discipline));
   return Array.from(s).sort();
@@ -285,6 +527,8 @@ const sortedRaces = computed(() => {
 
 const maxTotalTime = computed(() => {
   const times = filteredRaces.value.map(r => getRaceTotalTime(r)).filter(t => t > 0);
+  if (potentialRow.value) times.push(potentialRow.value.totalTime);
+  if (virtualBestRow.value) times.push(virtualBestRow.value.totalTime);
   return times.length > 0 ? Math.max(...times) * 1.05 : 15;
 });
 
@@ -292,40 +536,83 @@ const templateSegments = computed(() => {
   return getDynamicAnalysisTemplate(selectedDiscipline.value, athlete.value?.gender, athlete.value?.category) || [];
 });
 
-/**
- * VIRTUAL BEST ENGINE
- * Calculates the absolute best performance for each segment across all filtered races
- */
-const virtualBestSegments = computed(() => {
-  if (!filteredRaces.value.length) return [];
+// New: Atomic segments for consistent timeline alignment
+const timelineSegmentsConfig = computed(() => {
+  const template = templateSegments.value;
+  if (!template.length) return [];
   
-  return templateSegments.value.map((template, idx) => {
-    const allValues = filteredRaces.value.map(race => {
-      const seg = getRaceSegmentData(race, idx);
-      return seg ? seg[activeMetric.value] : null;
-    }).filter(v => v !== null && v > 0);
+  // Filter out overlapping segments (like "0-60" if we already have "0-30" and "30-60")
+  // For simplicity, we use segments where (end - start) matches the progressive milestones
+  const points = new Set([0]);
+  template.forEach(s => { points.add(s.start); points.add(s.end); });
+  const sortedPoints = Array.from(points).sort((a, b) => a - b);
+  
+  const atomic = [];
+  for (let i = 1; i < sortedPoints.length; i++) {
+    const start = sortedPoints[i-1];
+    const end = sortedPoints[i];
+    if (end > parseInt(selectedDiscipline.value)) continue; // Don't go beyond finish
+    atomic.push({
+      start,
+      end,
+      label: `${end}m`
+    });
+  }
+  return atomic;
+});
 
-    if (!allValues.length) return null;
-
-    const isHigherBetter = activeMetric.value !== 'time';
-    return isHigherBetter ? Math.max(...allValues) : Math.min(...allValues);
+const potentialTimelineSegments = computed(() => {
+  if (!prediction.value) return [];
+  return timelineSegmentsConfig.value.map(seg => {
+    const startSplit = prediction.value.splits.find(s => Math.abs(s.distance - seg.start) < 0.1) || { time: 0 };
+    const endSplit = prediction.value.splits.find(s => Math.abs(s.distance - seg.end) < 0.1);
+    if (!endSplit) return { time: 0, [activeMetric.value]: 0 };
+    
+    const time = endSplit.time - startSplit.time;
+    let val = 0;
+    if (activeMetric.value === 'speed') val = (seg.end - seg.start) / time;
+    if (activeMetric.value === 'time') val = time;
+    
+    return { time, [activeMetric.value]: val };
   });
 });
+
+const virtualBestTimelineSegments = computed(() => {
+  if (!filteredRaces.value.length) return [];
+  return timelineSegmentsConfig.value.map(seg => {
+    const allSegs = filteredRaces.value.map(race => {
+        const raceInstance = race instanceof Race ? race : new Race(race);
+        const calculated = raceInstance.calculateIntervals([seg]);
+        return calculated[0];
+    }).filter(s => s && s.time > 0);
+
+    if (!allSegs.length) return { time: 0, [activeMetric.value]: 0 };
+    
+    const bestTime = Math.min(...allSegs.map(s => s.time));
+    const isHigherBetter = activeMetric.value !== 'time';
+    const bestValue = isHigherBetter 
+        ? Math.max(...allSegs.map(s => s[activeMetric.value])) 
+        : Math.min(...allSegs.map(s => s[activeMetric.value]));
+
+    return { time: bestTime, [activeMetric.value]: bestValue };
+  });
+});
+
+const getTimelineSegmentsForRace = (race) => {
+  const raceInstance = race instanceof Race ? race : new Race(race);
+  return raceInstance.calculateIntervals(timelineSegmentsConfig.value);
+};
 
 const gridSegmentsCache = new Map();
 const getRaceSegmentData = (race, index) => {
   if (!race) return null;
-  const key = race.id + selectedDiscipline.value + '_grid';
-  let calculated;
-  if (gridSegmentsCache.has(key)) {
-    calculated = gridSegmentsCache.get(key);
-  } else {
-    calculated = race.calculateIntervals(templateSegments.value);
-    gridSegmentsCache.set(key, calculated);
-  }
-  const templateItem = templateSegments.value[index];
-  if (!templateItem || !calculated) return null;
-  return calculated.find(c => c && c.label === templateItem.label && c.start === templateItem.start && c.end === templateItem.end);
+  const key = race.id + selectedDiscipline.value + activeMetric.value;
+  if (gridSegmentsCache.has(key)) return gridSegmentsCache.get(key)[index];
+  
+  const raceInstance = race instanceof Race ? race : new Race(race);
+  const calculated = raceInstance.calculateIntervals(templateSegments.value);
+  gridSegmentsCache.set(key, calculated);
+  return calculated[index];
 };
 
 const getLinearSegments = (race) => {
@@ -334,132 +621,57 @@ const getLinearSegments = (race) => {
   return raceInstance.segmentSpeeds;
 };
 
-const getPbLinearMarkers = () => {
-  if (!pbRace.value) return [];
-  let currentTime = 0;
-  return getLinearSegments(pbRace.value).map(seg => {
-    currentTime += seg.time;
-    return { label: seg.label, percent: (currentTime / maxTotalTime.value) * 100 };
-  });
-};
-
 const getRaceTotalTime = (race) => {
     if (!race || !race.milestones) return 0;
     const dist = parseInt(race.discipline);
     const finish = race.milestones.find(m => m.distance === dist);
     const start = race.milestones.find(m => m.distance === 0);
-    if (finish && start) return Math.max(0, finish.time - start.time);
-    
-    const sorted = [...race.milestones].sort((a, b) => a.time - b.time);
-    if (sorted.length > 1) {
-        const first = sorted.find(m => m.distance === 0) || sorted[0];
-        const last = sorted[sorted.length - 1];
-        return Math.max(0, last.time - first.time);
-    }
-    return 0;
-};
-
-const getPbValue = (segmentIndex, metric = null) => {
-  const seg = getRaceSegmentData(pbRace.value, segmentIndex);
-  return seg ? seg[metric || activeMetric.value] : 0;
+    return (finish && start) ? finish.time - start.time : 0;
 };
 
 const formatValue = (v) => typeof v === 'number' ? v.toFixed(2) : '-';
 const formatDiff = (v) => typeof v === 'number' ? (v > 0 ? '+' : '') + v.toFixed(2) : '-';
+const formatMetricValue = (val) => (val === undefined || val === null || val === 0) ? '-' : val.toFixed(2);
 
-const formatMetricValue = (val, metric) => {
-    if (val === undefined || val === null || val === 0) return '-';
-    return val.toFixed(2);
-};
-
-const getDiffClass = (diff, higherIsBetter = true) => {
-    if (Math.abs(diff) < 0.01) return 'text-slate-500 text-[9px]';
-    return (higherIsBetter ? diff > 0 : diff < 0) ? 'text-emerald-400 text-[9px] font-bold' : 'text-red-400 text-[9px] font-bold';
-};
-
-/**
- * CORE COLOR CALCULATION ENGINE
- * Professional linear interpolation with high-sensitivity magnification
- */
 const getCellStyles = (val, ref, metric) => {
-  if (val === undefined || val === null || val === 0 || !ref) {
-    return { backgroundColor: '#f8fafc', color: '#cbd5e1' };
-  }
-  
+  if (!val || !ref) return { backgroundColor: '#f8fafc', color: '#cbd5e1' };
   const isHigherBetter = metric !== 'time';
   const ratio = isHigherBetter ? (val / ref) : (ref / val);
-  
-  // High sensitivity window: 94% to 100% of Virtual Best
-  // In elite sprinting, 6% is a massive range.
   const clampedRatio = Math.max(0.94, Math.min(1.0, ratio));
-  const normalized = (clampedRatio - 0.94) / 0.06; // 0 to 1 scale
-
-  let bgColor;
-  let textColor = '#ffffff';
-
+  const normalized = (clampedRatio - 0.94) / 0.06;
+  
   if (viewMode.value === 'heatmap') {
-    // Heatmap: Deep Indigo Scale
-    const hue = 235; 
-    const saturation = 75; // Constant high saturation
-    const lightness = 96 - (normalized * 60); // 96% (light) to 36% (dark)
-    
-    bgColor = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
-    if (lightness > 65) textColor = '#1e1b4b'; // Indigo 950
+    const lightness = 96 - (normalized * 60);
+    return { backgroundColor: `hsl(235, 75%, ${lightness}%)`, color: lightness > 65 ? '#1e1b4b' : '#fff' };
   } else {
-    // Delta: Red -> Amber -> Emerald Scale
-    // We map 0.94 (Red) -> 0.97 (Amber) -> 1.0 (Emerald)
-    let hue, saturation, lightness;
-    
-    if (normalized > 0.5) {
-      // Zone: Amber to Emerald (97% to 100%)
-      const zoneNorm = (normalized - 0.5) * 2; // 0 to 1
-      hue = 45 + (zoneNorm * 97); // 45 (Amber) to 142 (Emerald)
-      saturation = 70 + (zoneNorm * 10);
-      lightness = 85 - (zoneNorm * 40); // 85% to 45%
-    } else {
-      // Zone: Red to Amber (94% to 97%)
-      const zoneNorm = normalized * 2; // 0 to 1
-      hue = 0 + (zoneNorm * 45); // 0 (Red) to 45 (Amber)
-      saturation = 80;
-      lightness = 70 + (zoneNorm * 15); // 70% to 85%
-    }
-    
-    bgColor = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
-    if (lightness > 70) {
-      textColor = normalized > 0.5 ? '#064e3b' : '#7f1d1d';
-    }
+    let hue = normalized > 0.5 ? 45 + (normalized - 0.5) * 2 * 97 : normalized * 2 * 45;
+    return { backgroundColor: `hsl(${hue}, 80%, 70%)`, color: '#000' };
   }
-
-  return { backgroundColor: bgColor, color: textColor };
 };
 
 const getLinearCellStyles = (segment, race) => {
-  if (!segment) return { backgroundColor: '#f8fafc' };
-  
-  // Find the index of this segment in the linear array to get the virtual best
   const raceInstance = race instanceof Race ? race : new Race(race);
-  const linearSegs = raceInstance.segmentSpeeds;
-  const idx = linearSegs.findIndex(s => s.label === segment.label && s.start === segment.start);
-  
+  const idx = raceInstance.segmentSpeeds.findIndex(s => s.label === segment.label);
   const refVal = virtualBestSegments.value[idx];
   return getCellStyles(segment[activeMetric.value], refVal, activeMetric.value);
 };
 
 const getGridCellStyles = (race, index) => {
   const seg = getRaceSegmentData(race, index);
-  if (!seg) return { backgroundColor: '#f8fafc' };
-  
   const refVal = virtualBestSegments.value[index];
-  return getCellStyles(seg[activeMetric.value], refVal, activeMetric.value);
+  return getCellStyles(seg?.[activeMetric.value], refVal, activeMetric.value);
 };
 
-const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString('fr-CH', { day: 'numeric', month: 'short', year: '2-digit' });
+const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString('fr-CH', { day: 'numeric', month: 'short' });
+
+watch([selectedDiscipline, activeMetric, athlete], runAnalysis);
 
 onMounted(() => {
   const athleteId = localStorage.getItem('sprint_predictor_current_athlete');
   if (athleteId) {
     athlete.value = Athlete.load(athleteId);
     races.value = Race.getByAthlete(athleteId);
+    runAnalysis();
   }
 });
 </script>
