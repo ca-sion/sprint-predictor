@@ -1,28 +1,56 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Header -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-      <div>
-        <nav class="flex mb-2" aria-label="Breadcrumb">
-          <router-link to="/" class="text-xs font-semibold text-slate-500 hover:text-blue-600 uppercase tracking-wider">Tableau de bord</router-link>
-          <span class="mx-2 text-slate-300">/</span>
-          <span class="text-xs font-semibold text-slate-900 uppercase tracking-wider">Évolution</span>
-        </nav>
-        <h2 class="text-3xl font-extrabold text-slate-900">
-          Progression de <span class="text-blue-600">{{ athlete?.name || 'l\'athlète' }}</span>
-        </h2>
-      </div>
-      
-      <!-- Discipline Selector -->
-      <div class="flex bg-slate-100 p-1 rounded-xl">
-        <button 
-          v-for="d in availableDisciplines"
-          :key="d"
-          @click="selectedDiscipline = d"
-          :class="['px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all', selectedDiscipline === d ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']"
-        >
-          {{ d }}
-        </button>
+    <div class="mb-8">
+      <nav class="flex mb-4" aria-label="Breadcrumb">
+        <ol class="flex items-center space-x-2">
+          <li>
+            <router-link to="/" class="text-xs font-bold text-slate-400 hover:text-blue-600 uppercase tracking-widest transition-colors">Tableau de bord</router-link>
+          </li>
+          <li class="flex items-center space-x-2">
+            <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            <span class="text-xs font-bold text-slate-900 uppercase tracking-widest">{{ athlete?.name || 'Athlète' }}</span>
+          </li>
+        </ol>
+      </nav>
+
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <h2 class="text-4xl font-black text-slate-900 tracking-tight mb-4">
+            Analyse des <span class="text-blue-600">courses</span>
+          </h2>
+          
+          <!-- Nav Tabs -->
+          <div class="flex bg-slate-100 p-1 rounded-xl w-fit">
+            <router-link 
+              :to="{ path: '/races-analysis', query: { athleteId: athlete?.id } }"
+              class="px-6 py-2 rounded-lg text-xs font-black uppercase transition-all text-slate-500 hover:text-slate-700"
+            >
+              Découpe et liste
+            </router-link>
+            <router-link 
+              :to="{ path: '/races-evolution', query: { athleteId: athlete?.id } }"
+              class="px-6 py-2 rounded-lg text-xs font-black uppercase transition-all bg-white text-blue-600 shadow-sm"
+            >
+              Évolution & comparaison
+            </router-link>
+          </div>
+        </div>
+
+        <!-- Discipline Selector Moved to Header Right -->
+        <div class="flex items-center gap-3">
+          <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest hidden lg:block">Discipline</span>
+          <div class="flex bg-slate-100 p-1 rounded-xl">
+            <button 
+              v-for="d in availableDisciplines"
+              :key="d"
+              @click="selectedDiscipline = d"
+              :class="['px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all', selectedDiscipline === d ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']"
+            >
+              {{ d }}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 

@@ -1,31 +1,49 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Header -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-      <div>
-        <nav class="flex mb-2" aria-label="Breadcrumb">
-          <router-link to="/" class="text-xs font-semibold text-slate-500 hover:text-blue-600 uppercase tracking-wider">Tableau de bord</router-link>
-          <span class="mx-2 text-slate-300">/</span>
-          <span class="text-xs font-semibold text-slate-900 uppercase tracking-wider">Analyse de courses</span>
-        </nav>
-        <h2 class="text-3xl font-extrabold text-slate-900">
-          Courses de <span class="text-blue-600">{{ athlete?.name || 'l\'athlète' }}</span>
-        </h2>
-      </div>
-      
-      <div class="flex items-center gap-3">
-        <router-link to="/races-evolution" class="inline-flex items-center px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-bold rounded-xl transition-all shadow-sm">
-          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
-          </svg>
-          Voir l'évolution
-        </router-link>
-        <button @click="showNewRaceModal = true" class="inline-flex items-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-all shadow-sm shadow-blue-200">
-          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-          </svg>
-          Nouvelle course
-        </button>
+    <div class="mb-8">
+      <nav class="flex mb-4" aria-label="Breadcrumb">
+        <ol class="flex items-center space-x-2">
+          <li>
+            <router-link to="/" class="text-xs font-bold text-slate-400 hover:text-blue-600 uppercase tracking-widest transition-colors">Tableau de bord</router-link>
+          </li>
+          <li class="flex items-center space-x-2">
+            <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            <span class="text-xs font-bold text-slate-900 uppercase tracking-widest">{{ athlete?.name || 'Athlète' }}</span>
+          </li>
+        </ol>
+      </nav>
+
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <h2 class="text-4xl font-black text-slate-900 tracking-tight mb-4">
+            Analyse des <span class="text-blue-600">courses</span>
+          </h2>
+          
+          <div class="flex bg-slate-100 p-1 rounded-xl w-fit">
+            <router-link 
+              :to="{ path: '/races-analysis', query: { athleteId: athlete?.id } }"
+              class="px-6 py-2 rounded-lg text-xs font-black uppercase transition-all bg-white text-blue-600 shadow-sm"
+            >
+              Découpe et liste
+            </router-link>
+            <router-link 
+              :to="{ path: '/races-evolution', query: { athleteId: athlete?.id } }"
+              class="px-6 py-2 rounded-lg text-xs font-black uppercase transition-all text-slate-500 hover:text-slate-700"
+            >
+              Évolution & comparaison
+            </router-link>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button @click="showNewRaceModal = true" class="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-black rounded-xl transition-all shadow-lg shadow-blue-200 uppercase tracking-wider">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Nouvelle course
+          </button>
+        </div>
       </div>
     </div>
 
