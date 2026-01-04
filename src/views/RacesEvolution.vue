@@ -355,7 +355,8 @@ import { Race } from '../models/Race.js';
 import { Athlete } from '../models/Athlete.js';
 import { StorageManager } from '../models/StorageManager.js';
 import { PredictionEngine } from '../models/PredictionEngine.js';
-import { getDynamicAnalysisTemplate } from '../data/ReferenceData.js';
+import { RaceService } from '../services/RaceService.js';
+import { getDynamicAnalysisTemplate } from '../data/definitions/Disciplines.js';
 
 const athlete = ref(null);
 const races = ref([]);
@@ -438,47 +439,7 @@ const manualSyncPB = (race) => {
 
 // --- VIRTUAL ROWS LOGIC ---
 const potentialRow = computed(() => {
-  if (!prediction.value || !prediction.value.profile) return null;
-  
-  const { vmax, tau } = prediction.value.profile;
-  const scaleFactor = prediction.value.scaleFactor || 1.0;
-  
-  const theorySegments = templateSegments.value.map(t => {
-    // We use the physics model directly for perfect accuracy on segments
-    const tStartRaw = engine.calculateTimeAtDistance(t.start, vmax, tau);
-    const tEndRaw = engine.calculateTimeAtDistance(t.end, vmax, tau);
-    
-    // Applying scaling: segmentTime = (tEndRaw - tStartRaw) * scaleFactor
-    let segmentTime = (tEndRaw - tStartRaw) * scaleFactor;
-    
-    // Crucial: If segment starts at 0, it must include the scaled reaction time 
-    // to match real-world timing (where 0-30m includes RT).
-    if (t.start === 0) {
-        segmentTime += (engine.CONSTANTS.REACTION_TIME * scaleFactor);
-    }
-
-    const segmentDist = t.end - t.start;
-    
-    if (activeMetric.value === 'speed') return segmentDist / segmentTime;
-    if (activeMetric.value === 'time') return segmentTime;
-    
-    // For frequency and step length, use average of splits in range
-    const splitsInRange = prediction.value.splits.filter(s => s.distance > t.start && s.distance <= t.end);
-    if (splitsInRange.length > 0) {
-        return splitsInRange.reduce((acc, s) => acc + (s[activeMetric.value] || 0), 0) / splitsInRange.length;
-    }
-    
-    // Fallback if no splits in range (e.g. very small segment)
-    const nearest = prediction.value.splits.reduce((prev, curr) => 
-      Math.abs(curr.distance - t.end) < Math.abs(prev.distance - t.end) ? curr : prev
-    );
-    return nearest[activeMetric.value] || 0;
-  });
-
-  return {
-    totalTime: parseFloat(prediction.value.time),
-    segments: theorySegments
-  };
+  return RaceService.projectPredictionToSegments(prediction.value, templateSegments.value, activeMetric.value, engine);
 });
 
 const pbRow = computed(() => {
@@ -491,38 +452,7 @@ const pbRow = computed(() => {
 });
 
 const virtualBestRow = computed(() => {
-  if (!filteredRaces.value.length) return null;
-  
-  // 1. Calculate TRUE Virtual Best total time using primitive segments (non-overlapping)
-  const primitiveBestTimes = new Map();
-  filteredRaces.value.forEach(race => {
-    const raceInstance = race instanceof Race ? race : new Race(race);
-    raceInstance.segmentSpeeds.forEach(seg => {
-      const currentBest = primitiveBestTimes.get(seg.id) || 999;
-      if (seg.time > 0 && seg.time < currentBest) {
-        primitiveBestTimes.set(seg.id, seg.time);
-      }
-    });
-  });
-  const totalTime = Array.from(primitiveBestTimes.values()).reduce((a, b) => a + b, 0);
-
-  // 2. Calculate values for the grid display (templateSegments)
-  const isHigherBetter = activeMetric.value !== 'time';
-  const segments = templateSegments.value.map((t, idx) => {
-    const allSegs = filteredRaces.value.map(race => {
-        const raceInstance = race instanceof Race ? race : new Race(race);
-        const calculated = raceInstance.calculateIntervals(templateSegments.value);
-        return calculated[idx];
-    }).filter(s => s && s.time > 0);
-
-    if (!allSegs.length) return 0;
-    
-    return isHigherBetter 
-        ? Math.max(...allSegs.map(s => s[activeMetric.value])) 
-        : Math.min(...allSegs.map(s => s[activeMetric.value]));
-  });
-
-  return { totalTime, segments };
+  return RaceService.calculateVirtualBest(filteredRaces.value, templateSegments.value, activeMetric.value);
 });
 
 const virtualBestSegments = computed(() => virtualBestRow.value?.segments || []);
@@ -669,75 +599,26 @@ const templateSegments = computed(() => {
 
 // New: Atomic segments for consistent timeline alignment
 const timelineSegmentsConfig = computed(() => {
-  const template = templateSegments.value;
-  if (!template.length) return [];
-  
-  // Filter out overlapping segments (like "0-60" if we already have "0-30" and "30-60")
-  // For simplicity, we use segments where (end - start) matches the progressive milestones
-  const points = new Set([0]);
-  template.forEach(s => { points.add(s.start); points.add(s.end); });
-  const sortedPoints = Array.from(points).sort((a, b) => a - b);
-  
-  const atomic = [];
-  for (let i = 1; i < sortedPoints.length; i++) {
-    const start = sortedPoints[i-1];
-    const end = sortedPoints[i];
-    if (end > parseInt(selectedDiscipline.value)) continue; // Don't go beyond finish
-    atomic.push({
-      start,
-      end,
-      label: `${end}m`
-    });
-  }
-  return atomic;
+  return RaceService.getAtomicSegments(selectedDiscipline.value, templateSegments.value);
 });
 
 const potentialTimelineSegments = computed(() => {
-  if (!prediction.value) return [];
-  return timelineSegmentsConfig.value.map(seg => {
-    const startSplit = prediction.value.splits.find(s => Math.abs(s.distance - seg.start) < 0.1) || { time: 0 };
-    const endSplit = prediction.value.splits.find(s => Math.abs(s.distance - seg.end) < 0.1);
-    if (!endSplit) return { time: 0, [activeMetric.value]: 0 };
-    
-    const time = endSplit.time - startSplit.time;
-    let val = 0;
-    
-    if (activeMetric.value === 'speed') {
-      val = (seg.end - seg.start) / time;
-    } else if (activeMetric.value === 'time') {
-      val = time;
-    } else {
-      // For frequency and step length, average splits in range
-      const splitsInRange = prediction.value.splits.filter(s => s.distance > seg.start && s.distance <= seg.end);
-      if (splitsInRange.length > 0) {
-        val = splitsInRange.reduce((acc, s) => acc + (s[activeMetric.value] || 0), 0) / splitsInRange.length;
-      } else {
-        val = endSplit[activeMetric.value] || 0;
-      }
-    }
-    
-    return { time, [activeMetric.value]: val };
-  });
+  const result = RaceService.projectPredictionToSegments(prediction.value, timelineSegmentsConfig.value, activeMetric.value, engine);
+  if (!result) return [];
+  return timelineSegmentsConfig.value.map((seg, idx) => ({
+      time: result.segments[idx] ? (activeMetric.value === 'time' ? result.segments[idx] : (seg.end - seg.start) / result.segments[idx]) : 0,
+      [activeMetric.value]: result.segments[idx]
+  }));
 });
 
 const virtualBestTimelineSegments = computed(() => {
-  if (!filteredRaces.value.length) return [];
-  return timelineSegmentsConfig.value.map(seg => {
-    const allSegs = filteredRaces.value.map(race => {
-        const raceInstance = race instanceof Race ? race : new Race(race);
-        const calculated = raceInstance.calculateIntervals([seg]);
-        return calculated[0];
-    }).filter(s => s && s.time > 0);
-
-    if (!allSegs.length) return { time: 0, [activeMetric.value]: 0 };
-    
-    const bestTime = Math.min(...allSegs.map(s => s.time));
-    const isHigherBetter = activeMetric.value !== 'time';
-    const bestValue = isHigherBetter 
-        ? Math.max(...allSegs.map(s => s[activeMetric.value])) 
-        : Math.min(...allSegs.map(s => s[activeMetric.value]));
-
-    return { time: bestTime, [activeMetric.value]: bestValue };
+  const result = RaceService.calculateVirtualBest(filteredRaces.value, timelineSegmentsConfig.value, activeMetric.value);
+  if (!result) return [];
+  return timelineSegmentsConfig.value.map((seg, idx) => {
+      const val = result.segments[idx];
+      // For time, we need to calculate it correctly if the metric isn't 'time'
+      const timeVal = activeMetric.value === 'time' ? val : (val > 0 ? (seg.end - seg.start) / val : 0);
+      return { time: timeVal, [activeMetric.value]: val };
   });
 });
 
@@ -765,11 +646,7 @@ const getLinearSegments = (race) => {
 };
 
 const getRaceTotalTime = (race) => {
-    if (!race) return 0;
-    const raceInstance = race instanceof Race ? race : new Race(race);
-    const dist = parseInt(race.discipline);
-    const result = raceInstance.calculateIntervals([{ start: 0, end: dist }])[0];
-    return result ? result.time : 0;
+    return RaceService.getRaceTotalTime(race);
 };
 
 const formatValue = (v) => typeof v === 'number' ? v.toFixed(2) : '-';

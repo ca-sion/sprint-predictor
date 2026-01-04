@@ -569,7 +569,8 @@ import { useRoute } from 'vue-router';
 import { Athlete } from '../models/Athlete.js';
 import { Race } from '../models/Race.js';
 import { StorageManager } from '../models/StorageManager.js';
-import { ANALYSIS_TEMPLATES, DISCIPLINES_CONFIG, getDynamicDisciplineConfig, getDynamicAnalysisTemplate } from '../data/ReferenceData.js';
+import { RaceService } from '../services/RaceService.js';
+import { getDynamicDisciplineConfig, getDynamicAnalysisTemplate } from '../data/definitions/Disciplines.js';
 
 const route = useRoute();
 const athlete = ref(null);
@@ -618,29 +619,17 @@ const startOffset = computed(() => {
 });
 
 const getRaceTime = (rawTime) => {
-    if (!activeRace.value) return '---';
-    const time = rawTime - startOffset.value;
-    // We only show positive race times or 0
-    return time < -0.001 ? '---' : time.toFixed(3) + 's';
+    return RaceService.formatRaceTime(rawTime, activeRace.value);
 };
 
 const setAsStart = (time) => {
     if (!activeRace.value) return;
-    const startNode = activeRace.value.milestones.find(m => m.distance === 0);
-    if (startNode) {
-        startNode.time = time;
-        saveActiveRace();
-    } else {
-        // If no 0m milestone, create one
-        activeRace.value.milestones.push({
-            label: 'Départ (0m)',
-            distance: 0,
-            time: time,
-            type: 'split'
-        });
-        activeRace.value.milestones.sort((a, b) => a.time - b.time);
-        saveActiveRace();
-    }
+    const raceInstance = activeRace.value instanceof Race ? activeRace.value : new Race(activeRace.value);
+    raceInstance.setMilestone(0, time, 'split', 'Départ (0m)');
+    raceInstance.save();
+    // Refresh list and active race
+    loadData();
+    activeRace.value = Race.load(activeRace.value.id);
 };
 
 const segmentSpeeds = computed(() => {

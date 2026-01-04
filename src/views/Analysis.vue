@@ -317,7 +317,10 @@ import Chart from 'chart.js/auto';
 import { Athlete } from '../models/Athlete.js';
 import { PredictionEngine } from '../models/PredictionEngine.js';
 import { StorageManager } from '../models/StorageManager.js';
-import { INPUT_GROUPS, ATHLETICS_DATA, BIBLIOGRAPHY, GLOSSARY } from '../data/ReferenceData.js';
+import { CoachingService } from '../services/CoachingService.js';
+import { INPUT_GROUPS } from '../data/definitions/FormConfig.js';
+import { ATHLETICS_DATA } from '../data/definitions/Standards.js';
+import { GLOSSARY, BIBLIOGRAPHY } from '../data/definitions/Glossary.js';
 
 const athlete = ref(new Athlete());
 const engine = new PredictionEngine();
@@ -375,7 +378,11 @@ const runAnalysis = () => {
   analysisTimeout = setTimeout(() => {
     try {
       prediction.value = engine.predict(athlete.value, targetEvent.value);
-      analysis.value = engine.generateAdvice(prediction.value.profile, athlete.value.metrics, athlete.value);
+      
+      // Use CoachingService for interpretation
+      analysis.value = CoachingService.generateAdvice(prediction.value.profile, athlete.value.metrics, athlete.value);
+      prediction.value.analysisGrid = CoachingService.generateAnalysisGrid(athlete.value, prediction.value.time, targetEvent.value, prediction.value.profile);
+      prediction.value.consistency = CoachingService.analyzeConsistency(prediction.value.time, targetEvent.value, athlete.value.metrics);
       
       // Wait for Vue to update the DOM (v-if blocks)
       nextTick(() => {
@@ -536,19 +543,8 @@ const renderVelocityChart = () => {
   });
 };
 
-const getStatusClasses = (status) => {
-  if (status === 'excellent') return 'border-purple-200 bg-purple-50/30';
-  if (status === 'good') return 'border-emerald-200 bg-emerald-50/30';
-  if (status === 'bad') return 'border-red-200 bg-red-50/30';
-  return 'border-slate-200 bg-white';
-};
-
-const getBadgeClasses = (status) => {
-  if (status === 'excellent') return 'bg-purple-600 text-white';
-  if (status === 'good') return 'bg-emerald-600 text-white';
-  if (status === 'bad') return 'bg-red-600 text-white';
-  return 'bg-slate-100 text-slate-600';
-};
+const getStatusClasses = (status) => CoachingService.getStatusClasses(status);
+const getBadgeClasses = (status) => CoachingService.getBadgeClasses(status);
 
 onMounted(() => {
   loadInitialData();

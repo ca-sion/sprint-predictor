@@ -121,7 +121,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { Athlete } from '../models/Athlete.js';
 import { Race } from '../models/Race.js';
 import { StorageManager } from '../models/StorageManager.js';
-import { INPUT_GROUPS } from '../data/ReferenceData.js';
+import { INPUT_GROUPS } from '../data/definitions/FormConfig.js';
 
 const route = useRoute();
 const router = useRouter();
