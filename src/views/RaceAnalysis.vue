@@ -568,6 +568,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { Athlete } from '../models/Athlete.js';
 import { Race } from '../models/Race.js';
+import { StorageManager } from '../models/StorageManager.js';
 import { ANALYSIS_TEMPLATES, DISCIPLINES_CONFIG, getDynamicDisciplineConfig, getDynamicAnalysisTemplate } from '../data/ReferenceData.js';
 
 const route = useRoute();
@@ -667,7 +668,7 @@ const customIntervals = computed(() => {
 });
 
 const loadData = () => {
-  const athleteId = route.query.athleteId || localStorage.getItem('sprint_predictor_current_athlete');
+  const athleteId = route.query.athleteId || StorageManager.getCurrentAthleteId();
   if (athleteId) {
     athlete.value = Athlete.load(athleteId);
     races.value = Race.getByAthlete(athleteId);

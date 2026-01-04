@@ -353,6 +353,7 @@ import { ref, computed, onMounted, nextTick, watch } from 'vue';
 import Chart from 'chart.js/auto';
 import { Race } from '../models/Race.js';
 import { Athlete } from '../models/Athlete.js';
+import { StorageManager } from '../models/StorageManager.js';
 import { PredictionEngine } from '../models/PredictionEngine.js';
 import { getDynamicAnalysisTemplate } from '../data/ReferenceData.js';
 
@@ -786,7 +787,7 @@ const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString('fr-CH', { 
 watch([selectedDiscipline, activeMetric, athlete], runAnalysis);
 
 onMounted(() => {
-  const athleteId = localStorage.getItem('sprint_predictor_current_athlete');
+  const athleteId = StorageManager.getCurrentAthleteId();
   if (athleteId) {
     athlete.value = Athlete.load(athleteId);
     races.value = Race.getByAthlete(athleteId);
