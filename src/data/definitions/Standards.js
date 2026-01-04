@@ -224,3 +224,25 @@ export const CONTACT_TIME_TARGETS = {
     { label: "U18", min: 125, max: 140, vmax: "8.2 - 9.0" },
   ],
 };
+
+/**
+ * Quality Benchmarks (Target values for Radar Chart)
+ * Defined by Category and Gender.
+ * Revised for National/Regional Elite levels.
+ */
+export const QUALITY_BENCHMARKS = {
+  M: {
+    ELITE: { tau: 0.90, vmax: 11.6, pmax: 28, endurance: 1.10, reactivity: 15 },
+    U23:   { tau: 0.94, vmax: 11.2, pmax: 25, endurance: 1.12, reactivity: 14 },
+    U20:   { tau: 0.98, vmax: 10.8, pmax: 22, endurance: 1.14, reactivity: 12 },
+    U18:   { tau: 1.05, vmax: 10.2, pmax: 19, endurance: 1.18, reactivity: 10 },
+    U16:   { tau: 1.15, vmax: 9.2,  pmax: 15, endurance: 1.22, reactivity: 8 }
+  },
+  F: {
+    ELITE: { tau: 0.96, vmax: 10.6, pmax: 23, endurance: 1.12, reactivity: 13 },
+    U23:   { tau: 1.00, vmax: 10.2, pmax: 20, endurance: 1.14, reactivity: 12 },
+    U20:   { tau: 1.05, vmax: 9.8,  pmax: 18, endurance: 1.16, reactivity: 11 },
+    U18:   { tau: 1.10, vmax: 9.2,  pmax: 15, endurance: 1.20, reactivity: 9 },
+    U16:   { tau: 1.20, vmax: 8.4,  pmax: 12, endurance: 1.24, reactivity: 7 }
+  }
+};

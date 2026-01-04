@@ -207,8 +207,8 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- Splits Table -->
-          <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+          <!-- Splits Table (Full Width) -->
+          <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm lg:col-span-2">
             <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Découpage de Course</h3>
             <div class="overflow-hidden rounded-lg border border-slate-100">
               <table class="w-full text-sm text-left">
@@ -216,7 +216,7 @@
                   <tr>
                     <th class="px-4 py-3">Dist.</th>
                     <th class="px-4 py-3">Temps</th>
-                    <th class="px-4 py-3">Split</th>
+                    <th class="px-4 py-3">Segment</th>
                     <th class="px-4 py-3">V (m/s)</th>
                   </tr>
                 </thead>
@@ -232,50 +232,40 @@
             </div>
           </div>
 
-          <!-- Velocity Chart -->
+          <!-- Qualities Radar Chart -->
           <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Courbe de Vitesse</h3>
-            <div class="relative h-48 w-full">
-              <canvas ref="velocityChartCanvas"></canvas>
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Qualités athlétiques</h3>
+            <div class="relative h-64 w-full">
+              <canvas ref="radarChartCanvas"></canvas>
             </div>
           </div>
 
-          <!-- FV Profile Chart -->
-          <div class="bg-slate-900 rounded-xl p-6 border border-slate-800 shadow-sm lg:col-span-2">
+          <!-- FV Profile Chart (stays here or goes full width depending on space) -->
+          <div class="bg-slate-900 rounded-xl p-6 border border-slate-800 shadow-sm">
             <div class="flex items-center justify-between mb-6">
-              <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Profil Scientifique Force-Vitesse</h3>
-              <div v-if="physicsMetrics" class="flex gap-6">
+              <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Profil Force-Vitesse</h3>
+              <div v-if="physicsMetrics" class="flex gap-4">
                 <div class="text-center">
-                  <p class="text-[9px] text-slate-500 uppercase font-black">F0 (N/kg)</p>
-                  <p class="text-lg font-bold text-white leading-none">{{ FormatService.number(physicsMetrics.f0) }}</p>
+                  <p class="text-[8px] text-slate-500 uppercase font-black">F0</p>
+                  <p class="text-xs font-bold text-white leading-none">{{ FormatService.number(physicsMetrics.f0) }}</p>
                 </div>
                 <div class="text-center">
-                  <p class="text-[9px] text-slate-500 uppercase font-black">Vmax (m/s)</p>
-                  <p class="text-lg font-bold text-blue-400 leading-none">{{ FormatService.number(physicsMetrics.vmax) }}</p>
-                </div>
-                <div class="text-center">
-                  <p class="text-[9px] text-slate-500 uppercase font-black">Pmax (W/kg)</p>
-                  <p class="text-lg font-bold text-emerald-400 leading-none">{{ FormatService.number(physicsMetrics.pmax, 1) }}</p>
+                  <p class="text-[8px] text-slate-500 uppercase font-black">Vmax</p>
+                  <p class="text-xs font-bold text-blue-400 leading-none">{{ FormatService.number(physicsMetrics.vmax) }}</p>
                 </div>
               </div>
             </div>
-            <div class="relative h-64 w-full">
+            <div class="relative h-48 w-full">
               <canvas ref="fvProfileChartCanvas"></canvas>
             </div>
             
-            <div v-if="fvInterpretation" class="mt-6 p-4 bg-white/5 rounded-xl border border-white/5 animate-fade-in">
+            <div v-if="fvInterpretation" class="mt-4 p-3 bg-white/5 rounded-lg border border-white/5 animate-fade-in">
               <div class="flex items-center gap-2 mb-1">
-                <span class="w-2 h-2 rounded-full bg-current" :class="fvInterpretation.color"></span>
-                <span class="text-xs font-black uppercase tracking-widest" :class="fvInterpretation.color">{{ fvInterpretation.label }}</span>
+                <span class="w-1.5 h-1.5 rounded-full bg-current" :class="fvInterpretation.color"></span>
+                <span class="text-[10px] font-black uppercase tracking-widest" :class="fvInterpretation.color">{{ fvInterpretation.label }}</span>
               </div>
-              <p class="text-sm text-slate-300 leading-snug mb-2">{{ fvInterpretation.description }}</p>
-              <div class="flex items-start gap-2 text-[11px] text-slate-500 bg-black/20 p-2 rounded-lg border border-white/5">
-                <span class="text-blue-400 font-bold">CONSEIL:</span>
-                <span>{{ fvInterpretation.advice }}</span>
-              </div>
+              <p class="text-[11px] text-slate-400 leading-tight">{{ fvInterpretation.description }}</p>
             </div>
-
-            <p class="mt-4 text-[10px] text-slate-500 italic text-center">Modèle de dynamique Samozino/Morin - Droite de force et parabole de puissance théorique.</p>
           </div>
         </div>
 
@@ -290,7 +280,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
                   </svg>
                 </div>
-                <h4 class="font-bold text-slate-900">Points Forts</h4>
+                <h4 class="font-bold text-slate-900">Points forts</h4>
               </div>
               <ul class="space-y-2 text-sm text-slate-600 list-inside marker:text-green-500 pl-2">
                 <li v-for="s in (analysis?.strengths || [])" :key="s">{{ s }}</li>
@@ -303,7 +293,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                   </svg>
                 </div>
-                <h4 class="font-bold text-slate-900">Axes de Travail</h4>
+                <h4 class="font-bold text-slate-900">Axes de travail</h4>
               </div>
               <ul class="space-y-2 text-sm text-slate-600 list-inside marker:text-orange-500 pl-2">
                 <li v-for="w in (analysis?.weaknesses || [])" :key="w">{{ w }}</li>
@@ -330,7 +320,7 @@
 
        <!-- Bibliography -->
        <section class="mt-12 pt-8 text-slate-400 text-xs text-start border-t border-slate-200">
-          <h4 class="uppercase tracking-widest font-bold mb-4 opacity-50">Références Scientifiques</h4>
+          <h4 class="uppercase tracking-widest font-bold mb-4 opacity-50">Références scientifiques</h4>
           <ul class="space-y-1 opacity-70">
               <li v-for="ref in bibliography" :key="ref">{{ ref }}</li>
           </ul>
@@ -393,13 +383,13 @@ const analysisSplits = computed(() => {
 });
 
 const standardsChartCanvas = ref(null);
-const velocityChartCanvas = ref(null);
+const radarChartCanvas = ref(null);
 const fvProfileChartCanvas = ref(null);
 const physicsMetrics = ref(null);
 const fvInterpretation = ref(null);
 
 let standardsChart = null;
-let velocityChart = null;
+let radarChart = null;
 let fvProfileChart = null;
 
 const loadInitialData = () => {
@@ -506,7 +496,7 @@ const citedGlossary = computed(() => {
 
 const renderCharts = () => {
   renderStandardsChart();
-  renderVelocityChart();
+  renderRadarChart();
   renderFVProfileChart();
 };
 
@@ -576,38 +566,71 @@ const renderStandardsChart = () => {
   });
 };
 
-const renderVelocityChart = () => {
-  const ctx = velocityChartCanvas.value?.getContext('2d');
-  if (!ctx) return;
-  if (velocityChart) velocityChart.destroy();
+const renderRadarChart = () => {
+  const ctx = radarChartCanvas.value?.getContext('2d');
+  if (!ctx || !physicsMetrics.value) return;
+  if (radarChart) radarChart.destroy();
 
-  const splits = prediction.value?.splits || [];
-  if (splits.length === 0) return;
+  const data = CoachingService.calculateQualities(physicsMetrics.value, athlete.value.metrics, athlete.value);
+  if (!data) return;
 
-  velocityChart = new Chart(ctx, {
-    type: 'line',
+  radarChart = new Chart(ctx, {
+    type: 'radar',
     data: {
-      labels: splits.map(s => s.distance + 'm'),
-      datasets: [{
-        label: 'Vitesse (m/s)',
-        data: splits.map(s => s.velocity),
-        borderColor: '#2563eb',
-        backgroundColor: 'rgba(37, 99, 235, 0.05)',
-        borderWidth: 3,
-        tension: 0.4,
-        fill: true
-      }]
+      labels: data.scores.map(q => q.label),
+      datasets: [
+        {
+          label: 'Profil Actuel',
+          data: data.scores.map(q => q.score),
+          backgroundColor: 'rgba(37, 99, 235, 0.25)',
+          borderColor: '#2563eb',
+          borderWidth: 3,
+          pointBackgroundColor: '#2563eb',
+          pointBorderColor: '#fff',
+          pointRadius: 4,
+          zIndex: 10
+        },
+        {
+          label: `Objectif ${athlete.value.category}`,
+          data: data.benchmarks.map(q => q.score),
+          backgroundColor: 'rgba(148, 163, 184, 0.1)',
+          borderColor: '#94a3b8',
+          borderWidth: 2,
+          borderDash: [5, 5],
+          pointRadius: 0,
+          fill: true,
+          zIndex: 5
+        }
+      ]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: { 
-          y: { 
-              grid: { color: '#f1f5f9' },
-              title: { display: true, text: 'Vitesse (m/s)', font: { size: 9 } }
-          }, 
-          x: { grid: { display: false } } 
+      scales: {
+        r: {
+          min: 0,
+          max: 100,
+          beginAtZero: true,
+          ticks: { display: false, stepSize: 20 },
+          grid: { color: '#f1f5f9' },
+          angleLines: { color: '#f1f5f9' },
+          pointLabels: {
+            font: { size: 10, weight: 'bold' },
+            color: '#64748b'
+          }
+        }
+      },
+      plugins: {
+        legend: { 
+          display: true, 
+          position: 'bottom',
+          labels: { boxWidth: 12, font: { size: 10 } }
+        },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(0)}/100`
+          }
+        }
       }
     }
   });

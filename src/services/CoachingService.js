@@ -2,7 +2,7 @@
  * Coaching Service
  * Handles the interpretation of physical data into actionable advice and analysis.
  */
-import { ATHLETICS_DATA, CONTACT_TIME_TARGETS } from '../data/definitions/Standards.js';
+import { ATHLETICS_DATA, CONTACT_TIME_TARGETS, QUALITY_BENCHMARKS } from '../data/definitions/Standards.js';
 
 export class CoachingService {
     
@@ -15,6 +15,25 @@ export class CoachingService {
         const genderNode = eventNode[gender] || eventNode['M'];
         if (!genderNode) return null;
         return genderNode[category] || genderNode['ELITE'];
+    }
+
+    /**
+     * Normalization engine: transforms raw physical values into 0-100 scores.
+     */
+    static normalizeQuality(key, val) {
+        switch (key) {
+            case 'tau':       // Explosivity: 0.80s = 100, 1.5s = 0
+                return Math.max(0, Math.min(100, 100 * (1.5 - val) / (1.5 - 0.80)));
+            case 'vmax':      // Speed: 12.0m/s = 100, 7.5m/s = 0
+                return Math.max(0, Math.min(100, 100 * (val - 7.5) / (12.0 - 7.5)));
+            case 'pmax':      // Power: 32W/kg = 100, 10W/kg = 0
+                return Math.max(0, Math.min(100, 100 * (val - 10) / (32 - 10)));
+            case 'endurance': // Index: 1.05 = 100, 1.35 = 0
+                return Math.max(0, Math.min(100, 100 * (1.35 - val) / (1.35 - 1.05)));
+            case 'reactivity':// Prestige %: 18% = 100, 5% = 0
+                return Math.max(0, Math.min(100, 100 * (val - 5) / (18 - 5)));
+            default: return 50;
+        }
     }
 
     /**
@@ -383,19 +402,64 @@ export class CoachingService {
     }
 
     /**
+     * Calculates normalized scores (0-100) for athletic qualities radar.
+     */
+    static calculateQualities(physics, metrics, athlete) {
+        if (!physics) return null;
+
+        // 1. Athlete Current Profile
+        let fatigueIndex = 0;
+        if (metrics.test_30m_fly) {
+             let tLong = metrics.test_120m || metrics.test_80m || metrics.test_60m || 0;
+             let dLong = metrics.test_120m ? 120 : metrics.test_80m ? 80 : metrics.test_60m ? 60 : 0;
+             if (tLong > 0) fatigueIndex = (30 / metrics.test_30m_fly) / (dLong / tLong);
+        }
+
+        let prestige = 5;
+        if (metrics.cmj_height && metrics.sj_height) {
+            prestige = ((metrics.cmj_height - metrics.sj_height) / metrics.sj_height) * 100;
+        }
+
+        const scores = [
+            { label: 'Explosivité', score: this.normalizeQuality('tau', physics.tau) },
+            { label: 'Vitesse Max', score: this.normalizeQuality('vmax', physics.vmax) },
+            { label: 'Endurance',   score: this.normalizeQuality('endurance', fatigueIndex || 1.25) },
+            { label: 'Réactivité',  score: this.normalizeQuality('reactivity', prestige) },
+            { label: 'Puissance',   score: this.normalizeQuality('pmax', physics.pmax) }
+        ];
+
+        // 2. Category Benchmarks
+        const gender = athlete.gender || 'M';
+        const cat = athlete.category || 'ELITE';
+        const targets = QUALITY_BENCHMARKS[gender]?.[cat] || QUALITY_BENCHMARKS[gender]?.['ELITE'];
+
+        const benchmarks = [
+            { label: 'Explosivité', score: this.normalizeQuality('tau', targets.tau) },
+            { label: 'Vitesse Max', score: this.normalizeQuality('vmax', targets.vmax) },
+            { label: 'Endurance',   score: this.normalizeQuality('endurance', targets.endurance) },
+            { label: 'Réactivité',  score: this.normalizeQuality('reactivity', targets.reactivity) },
+            { label: 'Puissance',   score: this.normalizeQuality('pmax', targets.pmax) }
+        ];
+
+        return { scores, benchmarks };
+    }
+
+    /**
      * Extracts physical profile metrics (F0, Vmax, Pmax)
      */
     static getPhysicsProfile(profile) {
         if (!profile || !profile.vmax || !profile.tau) return null;
         
         const vmax = profile.vmax;
-        const f0 = vmax / profile.tau; // Relative Force (N/kg)
+        const tau = profile.tau;
+        const f0 = vmax / tau; // Relative Force (N/kg)
         const pmax = (f0 * vmax) / 4; // Relative Power (W/kg)
         
         return {
             f0,
             vmax,
             pmax,
+            tau,
             slope: -f0 / vmax
         };
     }
