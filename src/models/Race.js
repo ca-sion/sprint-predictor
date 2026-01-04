@@ -222,6 +222,24 @@ export class Race {
     }
 
     /**
+     * Get interpolated time at a specific distance
+     */
+    getTimeAtDistance(distance) {
+        if (distance === 0) return 0;
+        
+        const exact = this.milestones.find(m => Math.abs(m.distance - distance) < 0.01);
+        if (exact) return exact.time;
+
+        const after = this.milestones.find(m => m.distance > distance);
+        const before = [...this.milestones].reverse().find(m => m.distance <= distance) || { distance: 0, time: 0 };
+        
+        if (!after) return null; // Distance beyond recorded milestones
+
+        const ratio = (distance - before.distance) / (after.distance - before.distance);
+        return before.time + ratio * (after.time - before.time);
+    }
+
+    /**
      * Save to LocalStorage via StorageManager
      */
     save() {

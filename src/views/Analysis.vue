@@ -123,7 +123,23 @@
               <div class="text-7xl font-black text-slate-900 tracking-tighter">{{ FormatService.number(parseFloat(prediction.time)) }}</div>
               <span class="text-4xl font-bold text-slate-400">s</span>
             </div>
-            <div class="mt-2 text-sm text-slate-500 font-medium bg-slate-100 px-3 py-1 rounded-full">Intervalle ± {{ FormatService.time(prediction.range) }}</div>
+            
+            <!-- Realization Index (Performance vs Prediction) -->
+            <div v-if="athlete.metrics['pb_' + targetEvent.toLowerCase()]" class="mt-4 flex flex-col items-center">
+              <div class="text-[10px] font-black text-slate-400 uppercase tracking-tighter mb-1">Indice de Réalisation</div>
+              <div class="flex items-center gap-2">
+                <div class="w-32 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-blue-500 rounded-full transition-all duration-1000" 
+                       :style="{ width: Math.min(100, RaceService.calculatePerformanceIndex(athlete.metrics['pb_' + targetEvent.toLowerCase()], prediction.time)) + '%' }">
+                  </div>
+                </div>
+                <span class="text-xs font-bold text-slate-700">
+                  {{ FormatService.number(RaceService.calculatePerformanceIndex(athlete.metrics['pb_' + targetEvent.toLowerCase()], prediction.time), 1) }}%
+                </span>
+              </div>
+            </div>
+
+            <div class="mt-4 text-sm text-slate-500 font-medium bg-slate-100 px-3 py-1 rounded-full">Intervalle ± {{ FormatService.time(prediction.range) }}</div>
           </div>
           
           <div class="mt-6 flex flex-wrap justify-center gap-2">

@@ -124,7 +124,6 @@ export const DISCIPLINES = {
     analysis: [
       { label: "1er 200m", start: 0, end: 200, type: "total" },
       { label: "2e 200m", start: 200, end: 400, type: "total" },
-      { label: "Différentiel (2-1)", isDiff: true, startRef: 0, endRef: 200, startComp: 200, endComp: 400 },
       { label: "400m", start: 0, end: 400, type: "total" },
     ],
   },

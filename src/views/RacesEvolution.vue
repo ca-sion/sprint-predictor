@@ -218,9 +218,35 @@
               </div>
             </div>
           </div>
+
+          <!-- D. RÉGULARITÉ TECHNIQUE (CV) -->
+          <div v-if="segmentConsistency && filteredRaces.length >= 2" class="flex border-b border-slate-100 bg-slate-50/50 relative">
+            <div class="absolute left-0 top-0 bottom-0 w-1 bg-emerald-400"></div>
+            <div class="w-40 flex-shrink-0 p-4 border-r border-slate-100 flex flex-col justify-center">
+              <span class="text-[9px] font-black text-emerald-600 uppercase tracking-tighter mb-1">Régularité (CV)</span>
+              <div class="flex items-center gap-1.5">
+                 <svg class="w-3 h-3 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                 <span class="text-[10px] font-bold text-slate-400 uppercase">Coeff. de Var.</span>
+              </div>
+            </div>
+            <div class="flex-1 flex h-14">
+              <div v-for="(seg, idx) in segmentConsistency" :key="'cons-'+idx" class="flex-1 border-r border-slate-100/50 last:border-0 p-1.5 flex flex-col justify-center items-center">
+                <div class="text-[11px] font-black text-slate-800">{{ seg.cv.toFixed(1) }}%</div>
+                <div class="w-12 h-1 bg-slate-200 rounded-full mt-1 overflow-hidden">
+                  <div class="h-full rounded-full transition-all duration-1000" 
+                       :class="seg.cv < 3 ? 'bg-emerald-500' : (seg.cv < 6 ? 'bg-yellow-500' : 'bg-red-500')"
+                       :style="{ width: Math.min(100, (seg.cv / 10) * 100) + '%' }">
+                  </div>
+                </div>
+                <span class="text-[7px] font-black uppercase mt-1" :class="seg.cv < 3 ? 'text-emerald-600' : (seg.cv < 6 ? 'text-yellow-600' : 'text-red-600')">
+                  {{ seg.cv < 3 ? 'Stable' : (seg.cv < 6 ? 'Variable' : 'Instable') }}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- Sorted Races -->
+      <!-- Sorted Races -->
         <div class="divide-y divide-slate-100">
           <div v-for="race in sortedRaces" :key="race.id" class="flex hover:bg-slate-50 transition-colors group relative">
              <div class="w-40 flex-shrink-0 p-4 border-r border-slate-100 flex flex-col justify-center">
@@ -656,6 +682,10 @@ const maxTotalTime = computed(() => {
 
 const templateSegments = computed(() => {
   return getDynamicAnalysisTemplate(selectedDiscipline.value, athlete.value?.gender, athlete.value?.category) || [];
+});
+
+const segmentConsistency = computed(() => {
+  return RaceService.getSegmentConsistency(filteredRaces.value, templateSegments.value);
 });
 
 // New: Atomic segments for consistent timeline alignment

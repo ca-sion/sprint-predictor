@@ -42,12 +42,11 @@ export class RaceService {
 
     /**
      * Calculate Virtual Best (VB) total time and segment data
+     * Now uses interpolation to handle races with different split points.
      */
     static calculateVirtualBest(races, segmentsTemplate, metric = 'speed') {
         if (!races || races.length === 0) return null;
 
-        // 1. Calculate TRUE Virtual Best total time
-        // We use the most granular segments available (atomic) to avoid overlapping
         const disciplineId = races[0].discipline;
         const atomicTemplate = this.getAtomicSegments(disciplineId, segmentsTemplate);
         
@@ -55,11 +54,16 @@ export class RaceService {
         let isTotalTimeComplete = true;
 
         atomicTemplate.forEach(atomicSeg => {
-            const bestSegmentTime = Math.min(...races.map(race => {
+            const segmentTimes = races.map(race => {
                 const raceInstance = race instanceof Race ? race : new Race(race);
-                const result = raceInstance.calculateIntervals([atomicSeg])[0];
-                return (result && result.time > 0) ? result.time : 999;
-            }));
+                const tStart = raceInstance.getTimeAtDistance(atomicSeg.start);
+                const tEnd = raceInstance.getTimeAtDistance(atomicSeg.end);
+                
+                if (tStart !== null && tEnd !== null) return tEnd - tStart;
+                return 999;
+            });
+
+            const bestSegmentTime = Math.min(...segmentTimes);
 
             if (bestSegmentTime === 999) isTotalTimeComplete = false;
             else totalTime += bestSegmentTime;
@@ -70,11 +74,23 @@ export class RaceService {
         const segments = segmentsTemplate.map(t => {
             const allValues = races.map(race => {
                 const raceInstance = race instanceof Race ? race : new Race(race);
+                const tStart = raceInstance.getTimeAtDistance(t.start);
+                const tEnd = raceInstance.getTimeAtDistance(t.end);
+                
+                if (tStart === null || tEnd === null) return null;
+                
+                const segmentTime = tEnd - tStart;
+                const segmentDist = t.end - t.start;
+
+                if (metric === 'speed') return segmentDist / segmentTime;
+                if (metric === 'time') return segmentTime;
+                
+                // For other metrics, we still rely on calculateIntervals for now as they need step counts
                 const calculated = raceInstance.calculateIntervals([t]);
                 return calculated[0] ? calculated[0][metric] : null;
             }).filter(v => v !== null && v > 0);
 
-            if (allValues.length === 0) return null; // Return null if no data
+            if (allValues.length === 0) return null;
             return isHigherBetter ? Math.max(...allValues) : Math.min(...allValues);
         });
 
@@ -82,6 +98,48 @@ export class RaceService {
             totalTime: isTotalTimeComplete ? totalTime : 0, 
             segments 
         };
+    }
+
+    /**
+     * Measures the exploitation of physical potential.
+     * Returns an index in % (100% = race time matches predicted potential)
+     */
+    static calculatePerformanceIndex(actualTime, predictedTime) {
+        if (!actualTime || !predictedTime) return 0;
+        // Formula: 100 * (1 - (actual - predicted) / predicted)
+        // Simplified: 100 * predicted / actual
+        return (predictedTime / actualTime) * 100;
+    }
+
+    /**
+     * Calculates variability (standard deviation) of segments across races.
+     * Useful to identify technical instability.
+     */
+    static getSegmentConsistency(races, segmentsTemplate) {
+        if (!races || races.length < 2) return null;
+
+        return segmentsTemplate.map(t => {
+            const speeds = races.map(race => {
+                const raceInstance = race instanceof Race ? race : new Race(race);
+                const tStart = raceInstance.getTimeAtDistance(t.start);
+                const tEnd = raceInstance.getTimeAtDistance(t.end);
+                if (tStart === null || tEnd === null) return null;
+                return (t.end - t.start) / (tEnd - tStart);
+            }).filter(v => v !== null);
+
+            if (speeds.length < 2) return { label: t.label, cv: 0 }; // Coefficient of variation
+
+            const mean = speeds.reduce((a, b) => a + b, 0) / speeds.length;
+            const variance = speeds.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / speeds.length;
+            const stdDev = Math.sqrt(variance);
+            
+            return {
+                label: t.label,
+                mean,
+                stdDev,
+                cv: (stdDev / mean) * 100 // Variability percentage
+            };
+        });
     }
 
     /**
