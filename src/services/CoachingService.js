@@ -21,19 +21,20 @@ export class CoachingService {
 
     /**
      * Normalization engine: transforms raw physical values into 0-100 scores.
+     * Ranges expanded to prevent saturation at elite levels.
      */
     static normalizeQuality(key, val) {
         switch (key) {
-            case 'tau':       // Explosivity: 0.80s = 100, 1.5s = 0
-                return Math.max(0, Math.min(100, 100 * (1.5 - val) / (1.5 - 0.80)));
-            case 'vmax':      // Speed: 12.0m/s = 100, 7.5m/s = 0
-                return Math.max(0, Math.min(100, 100 * (val - 7.5) / (12.0 - 7.5)));
-            case 'pmax':      // Power: 32W/kg = 100, 10W/kg = 0
-                return Math.max(0, Math.min(100, 100 * (val - 10) / (32 - 10)));
+            case 'tau':       // Explosivity (Time constant): 0.70s = 100, 1.5s = 0
+                return Math.max(0, Math.min(100, 100 * (1.5 - val) / (1.5 - 0.70)));
+            case 'vmax':      // Speed: 12.5m/s = 100, 7.0m/s = 0
+                return Math.max(0, Math.min(100, 100 * (val - 7.0) / (12.5 - 7.0)));
+            case 'pmax':      // Power: 45W/kg = 100, 10W/kg = 0
+                return Math.max(0, Math.min(100, 100 * (val - 10) / (45 - 10)));
             case 'endurance': // Index: 1.05 = 100, 1.35 = 0
                 return Math.max(0, Math.min(100, 100 * (1.35 - val) / (1.35 - 1.05)));
-            case 'reactivity':// Prestige %: 18% = 100, 5% = 0
-                return Math.max(0, Math.min(100, 100 * (val - 5) / (18 - 5)));
+            case 'reactivity':// Prestige % (SSC): 25% = 100, 5% = 0
+                return Math.max(0, Math.min(100, 100 * (val - 5) / (25 - 5)));
             default: return 50;
         }
     }
@@ -183,15 +184,31 @@ export class CoachingService {
             }
         }
 
-        // 7. Tau Analysis
+        // 7. Tau Analysis (Acceleration)
         if (profile.tau) {
+            const bench = this.getBenchmarkForAthlete(athlete);
+            const targetTau = bench.tau;
             grid.push({
                 id: 'tau',
                 label: 'Accélération (Tau)',
                 value: profile.tau,
-                target: [0.80, 1.10],
-                status: profile.tau < 0.9 ? 'excellent' : (profile.tau > 1.2 ? 'bad' : 'good'),
+                target: [targetTau - 0.05, targetTau + 0.05],
+                status: profile.tau < targetTau - 0.02 ? 'excellent' : (profile.tau > targetTau + 0.05 ? 'bad' : 'good'),
                 unit: 's'
+            });
+        }
+
+        // 8. Power Analysis (Pmax)
+        if (profile.pmax) {
+            const bench = this.getBenchmarkForAthlete(athlete);
+            const targetPmax = bench.pmax;
+            grid.push({
+                id: 'pmax',
+                label: 'Puissance (Pmax)',
+                value: profile.pmax,
+                target: [targetPmax - 2, targetPmax + 2],
+                status: profile.pmax > targetPmax + 1 ? 'excellent' : (profile.pmax < targetPmax - 2 ? 'bad' : 'good'),
+                unit: 'power'
             });
         }
         

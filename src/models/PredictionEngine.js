@@ -4,7 +4,6 @@
  * Implements "The Velocity Reserve Model" logic.
  * Driven by DISCIPLINES configuration.
  */
-import { ATHLETICS_DATA } from '../data/definitions/Standards.js';
 import { DISCIPLINES, DISCIPLINE_TYPES } from '../data/definitions/Disciplines.js';
 
 export class PredictionEngine {

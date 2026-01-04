@@ -721,6 +721,7 @@ const formatGridValue = (row) => {
     case 'ms': return FormatService.number(row.value, 0) + 'ms';
     case 'cm': return FormatService.number(row.value, 1) + ' cm';
     case 'speed': return FormatService.speed(row.value);
+    case 'power': return FormatService.number(row.value, 1) + ' W/kg';
     default: return FormatService.number(row.value);
   }
 };
@@ -733,6 +734,7 @@ const formatGridTarget = (row) => {
       case 'ms': return `${FormatService.number(min, 0)}-${FormatService.number(max, 0)}ms`;
       case 'cm': return `${FormatService.number(min, 0)}-${FormatService.number(max, 0)} cm`;
       case 'speed': return `${FormatService.number(min)}-${FormatService.number(max)} m/s`;
+      case 'power': return `${FormatService.number(min, 1)}-${FormatService.number(max, 1)} W/kg`;
       default: return `${FormatService.number(min)}-${FormatService.number(max)}`;
     }
   }
@@ -767,6 +769,7 @@ const getDiffData = (row) => {
   let formattedDiff = FormatService.diff(diff);
   if (row.unit === 'ms') formattedDiff = (diff > 0 ? '+' : '') + Math.round(diff) + 'ms';
   if (row.unit === 'cm') formattedDiff = (diff > 0 ? '+' : '') + diff.toFixed(1) + 'cm';
+  if (row.unit === 'power') formattedDiff = (diff > 0 ? '+' : '') + diff.toFixed(1) + ' W/kg';
 
   return { val: formattedDiff, isGood: isPositive };
 };
