@@ -102,12 +102,13 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import { Athlete } from './models/Athlete.js';
+import { StorageManager } from './models/StorageManager.js';
 
 const currentAthlete = ref(null);
 const isMobileMenuOpen = ref(false);
 
 const updateCurrentAthlete = () => {
-  const savedId = localStorage.getItem('sprint_predictor_current_athlete');
+  const savedId = StorageManager.getCurrentAthleteId();
   if (savedId) {
     const all = Athlete.getAll();
     currentAthlete.value = all[savedId] || null;

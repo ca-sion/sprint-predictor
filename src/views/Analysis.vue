@@ -316,6 +316,7 @@ import { ref, computed, onMounted, nextTick } from 'vue';
 import Chart from 'chart.js/auto';
 import { Athlete } from '../models/Athlete.js';
 import { PredictionEngine } from '../models/PredictionEngine.js';
+import { StorageManager } from '../models/StorageManager.js';
 import { INPUT_GROUPS, ATHLETICS_DATA, BIBLIOGRAPHY, GLOSSARY } from '../data/ReferenceData.js';
 
 const athlete = ref(new Athlete());
@@ -343,12 +344,12 @@ const loadInitialData = () => {
       athlete.value = new Athlete(data);
       // Save shared athlete to storage so it appears in the list
       athlete.value.save();
-      localStorage.setItem('sprint_predictor_current_athlete', athlete.value.id);
+      StorageManager.setCurrentAthlete(athlete.value.id);
       return;
     } catch (e) { console.error("Error decoding shared data", e); }
   }
 
-  const savedId = localStorage.getItem('sprint_predictor_current_athlete');
+  const savedId = StorageManager.getCurrentAthleteId();
   if (savedId) {
     const loaded = Athlete.load(savedId);
     if (loaded) athlete.value = loaded;
@@ -395,7 +396,7 @@ const runAnalysis = () => {
 
 const saveAthlete = () => {
   athlete.value.save();
-  localStorage.setItem('sprint_predictor_current_athlete', athlete.value.id);
+  StorageManager.setCurrentAthlete(athlete.value.id);
   runAnalysis();
 };
 

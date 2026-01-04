@@ -137,20 +137,20 @@ const viewProfile = (id) => {
 };
 
 const selectAthlete = (id) => {
-  localStorage.setItem('sprint_predictor_current_athlete', id);
+  StorageManager.setCurrentAthlete(id);
   router.push('/analysis');
 };
 
 const analyzeAthlete = (id) => {
-  localStorage.setItem('sprint_predictor_current_athlete', id);
+  StorageManager.setCurrentAthlete(id);
   router.push({ path: '/races-analysis', query: { athleteId: id } });
 };
 
 const deleteAthlete = (id) => {
   if (confirm("Supprimer cet athlète ? Cette action est irréversible.")) {
     Athlete.delete(id);
-    if (localStorage.getItem('sprint_predictor_current_athlete') === id) {
-      localStorage.removeItem('sprint_predictor_current_athlete');
+    if (StorageManager.getCurrentAthleteId() === id) {
+      StorageManager.setCurrentAthlete(null);
     }
     loadAthletes();
   }

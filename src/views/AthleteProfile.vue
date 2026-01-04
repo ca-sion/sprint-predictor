@@ -120,6 +120,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Athlete } from '../models/Athlete.js';
 import { Race } from '../models/Race.js';
+import { StorageManager } from '../models/StorageManager.js';
 import { INPUT_GROUPS } from '../data/ReferenceData.js';
 
 const route = useRoute();
@@ -151,7 +152,7 @@ const saveAthlete = () => {
 const goToPredictor = () => {
   if (athlete.value) {
     athlete.value.save();
-    localStorage.setItem('sprint_predictor_current_athlete', athlete.value.id);
+    StorageManager.setCurrentAthlete(athlete.value.id);
     router.push('/analysis');
   }
 };
@@ -159,7 +160,7 @@ const goToPredictor = () => {
 const goToAnalysis = () => {
   if (athlete.value) {
     athlete.value.save();
-    localStorage.setItem('sprint_predictor_current_athlete', athlete.value.id);
+    StorageManager.setCurrentAthlete(athlete.value.id);
     router.push({ path: '/races-analysis', query: { athleteId: athlete.value.id } });
   }
 };

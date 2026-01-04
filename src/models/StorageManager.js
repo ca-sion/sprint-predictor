@@ -81,4 +81,17 @@ export class StorageManager {
         delete db.races[id];
         this.saveDB(db);
     }
+
+    static setCurrentAthlete(id) {
+        if (id) {
+            localStorage.setItem('sprint_predictor_current_athlete', id);
+        } else {
+            localStorage.removeItem('sprint_predictor_current_athlete');
+        }
+        window.dispatchEvent(new CustomEvent('athlete-updated'));
+    }
+
+    static getCurrentAthleteId() {
+        return localStorage.getItem('sprint_predictor_current_athlete');
+    }
 }
