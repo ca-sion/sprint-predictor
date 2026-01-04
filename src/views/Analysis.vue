@@ -120,10 +120,10 @@
           <div class="inline-flex flex-col items-center">
             <div class="text-xs font-bold text-blue-600 uppercase tracking-widest mb-2 bg-blue-50 px-3 py-1 rounded-full border border-blue-100">Potentiel Estimé</div>
             <div class="flex items-baseline justify-center gap-3 mt-2">
-              <div class="text-7xl font-black text-slate-900 tracking-tighter">{{ prediction.time }}</div>
+              <div class="text-7xl font-black text-slate-900 tracking-tighter">{{ FormatService.number(parseFloat(prediction.time)) }}</div>
               <span class="text-4xl font-bold text-slate-400">s</span>
             </div>
-            <div class="mt-2 text-sm text-slate-500 font-medium bg-slate-100 px-3 py-1 rounded-full">Intervalle ± {{ prediction.range }}s</div>
+            <div class="mt-2 text-sm text-slate-500 font-medium bg-slate-100 px-3 py-1 rounded-full">Intervalle ± {{ FormatService.time(prediction.range) }}</div>
           </div>
           
           <div class="mt-6 flex flex-wrap justify-center gap-2">
@@ -223,9 +223,9 @@
                 <tbody class="font-mono text-slate-700 divide-y divide-slate-100">
                   <tr v-for="split in analysisSplits" :key="split.distance" class="hover:bg-slate-50 transition-colors">
                     <td class="px-4 py-2.5 font-medium text-slate-600 text-xs">{{ split.label }}</td>
-                    <td class="px-4 py-2.5 text-slate-900 font-bold">{{ split.time.toFixed(2) }}s</td>
+                    <td class="px-4 py-2.5 text-slate-900 font-bold">{{ FormatService.time(split.time) }}</td>
                     <td class="px-4 py-2.5 text-blue-600 font-mono text-xs">{{ split.distance }}</td>
-                    <td class="px-4 py-2.5 text-slate-400 text-[10px]">{{ split.velocity.toFixed(2) }} m/s</td>
+                    <td class="px-4 py-2.5 text-slate-400 text-[10px]">{{ FormatService.speed(split.velocity) }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -247,15 +247,15 @@
               <div v-if="physicsMetrics" class="flex gap-6">
                 <div class="text-center">
                   <p class="text-[9px] text-slate-500 uppercase font-black">F0 (N/kg)</p>
-                  <p class="text-lg font-bold text-white leading-none">{{ physicsMetrics.f0.toFixed(2) }}</p>
+                  <p class="text-lg font-bold text-white leading-none">{{ FormatService.number(physicsMetrics.f0) }}</p>
                 </div>
                 <div class="text-center">
                   <p class="text-[9px] text-slate-500 uppercase font-black">Vmax (m/s)</p>
-                  <p class="text-lg font-bold text-blue-400 leading-none">{{ physicsMetrics.vmax.toFixed(2) }}</p>
+                  <p class="text-lg font-bold text-blue-400 leading-none">{{ FormatService.number(physicsMetrics.vmax) }}</p>
                 </div>
                 <div class="text-center">
                   <p class="text-[9px] text-slate-500 uppercase font-black">Pmax (W/kg)</p>
-                  <p class="text-lg font-bold text-emerald-400 leading-none">{{ physicsMetrics.pmax.toFixed(1) }}</p>
+                  <p class="text-lg font-bold text-emerald-400 leading-none">{{ FormatService.number(physicsMetrics.pmax, 1) }}</p>
                 </div>
               </div>
             </div>
@@ -357,6 +357,7 @@ import { PredictionEngine } from '../models/PredictionEngine.js';
 import { StorageManager } from '../models/StorageManager.js';
 import { CoachingService } from '../services/CoachingService.js';
 import { RaceService } from '../services/RaceService.js';
+import { FormatService } from '../services/FormatService.js';
 import { INPUT_GROUPS } from '../data/definitions/FormConfig.js';
 import { ATHLETICS_DATA } from '../data/definitions/Standards.js';
 import { GLOSSARY, BIBLIOGRAPHY } from '../data/definitions/Glossary.js';
