@@ -3,7 +3,7 @@
  * Handles the interpretation of physical data into actionable advice and analysis.
  * Purely numeric return values for the grid.
  */
-import { ATHLETICS_DATA, CONTACT_TIME_TARGETS, QUALITY_BENCHMARKS, NORMALIZATION_RANGES, ADVICE_THRESHOLDS } from '../data/definitions/Standards.js';
+import { ATHLETICS_DATA, QUALITY_BENCHMARKS, NORMALIZATION_RANGES, ADVICE_THRESHOLDS } from '../data/definitions/Standards.js';
 import { PhysicsService } from './PhysicsService.js';
 
 export class CoachingService {
@@ -29,7 +29,8 @@ export class CoachingService {
     }
 
     /**
-     * Find the best matching level for a value across all categories
+     * Find the best matching level for a value across all categories.
+     * Improved logic to handle values better than ELITE or between categories.
      */
     static findBestLevel(val, event, gender, subPath) {
         const eventNode = ATHLETICS_DATA[event];
@@ -38,22 +39,43 @@ export class CoachingService {
         if (!genderNode) return null;
 
         const categories = ['ELITE', 'U23', 'U20', 'U18', 'U16'];
-        for (const cat of categories) {
-            const catData = genderNode[cat];
-            if (!catData) continue;
-
-            const parts = subPath.split('.');
-            let metricRange = catData;
-            for (const part of parts) {
-                metricRange = metricRange ? metricRange[part] : null;
+        
+        const getMetric = (cat) => {
+            let data = genderNode[cat];
+            if (!data) return null;
+            for (const part of subPath.split('.')) {
+                data = data ? data[part] : null;
             }
+            return data;
+        };
 
-            if (metricRange && metricRange.min !== undefined && metricRange.max !== undefined) {
-                if (val <= metricRange.max && val >= metricRange.min) return cat;
-            } else if (metricRange && metricRange.target !== undefined) {
-                if (val <= metricRange.target) return cat;
+        // Detect direction (lower is better or higher is better)
+        let lowerIsBetter = true;
+        const eliteRange = getMetric('ELITE');
+        const compRange = getMetric('U16') || getMetric('U18') || getMetric('U20');
+        
+        if (eliteRange && compRange) {
+            const eV = eliteRange.min !== undefined ? eliteRange.min : eliteRange.target;
+            const cV = compRange.min !== undefined ? compRange.min : compRange.target;
+            if (eV !== undefined && cV !== undefined) {
+                lowerIsBetter = eV < cV;
             }
         }
+
+        for (const cat of categories) {
+            const range = getMetric(cat);
+            if (!range) continue;
+
+            const min = range.min !== undefined ? range.min : range.target;
+            const max = range.max !== undefined ? range.max : range.target;
+
+            if (lowerIsBetter) {
+                if (val <= max) return cat;
+            } else {
+                if (val >= min) return cat;
+            }
+        }
+
         return 'Loisir';
     }
 
@@ -149,7 +171,7 @@ export class CoachingService {
                 label: "Détente Verticale (CMJ)",
                 value: val,
                 target: [min, max],
-                status: val > min ? "excellent" : val < max ? "bad" : "good",
+                status: val > max ? "excellent" : (val < min ? "bad" : "good"),
                 level: this.findBestLevel(val, event, gender, "tests.cmj"),
                 unit: "cm"
               });
@@ -302,9 +324,9 @@ export class CoachingService {
         if (!raw_ct) return;
 
         const ct = raw_ct > 10 ? raw_ct : raw_ct * 1000;
-        const match = CONTACT_TIME_TARGETS[gender]?.find(t => ct >= t.min && ct <= t.max);
+        const level = this.findBestLevel(ct, '100m', gender, 'mechanics.contactTime');
         
-        if (match) ctx.advice.push(`Analyse de l'appui : Votre temps de contact est classé '${match.label}'.`);
+        if (level && level !== 'Loisir') ctx.advice.push(`Analyse de l'appui : Votre temps de contact est classé '${level}'.`);
         
         if (ct > ADVICE_THRESHOLDS.stiffness.high_ct && profile.vmax > ADVICE_THRESHOLDS.stiffness.vmax_threshold) {
             ctx.weaknesses.push("Temps de sol excessifs : Manque de raideur (stiffness) verticale à haute vitesse.");
