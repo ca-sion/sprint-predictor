@@ -36,6 +36,31 @@ export class ExportService {
     }
 
     /**
+     * Exporte toute la base de données dans un fichier JSON
+     */
+    static exportGlobalBackup() {
+        const db = StorageManager.getDB();
+        
+        const exportData = {
+            type: 'sprint_predictor_export',
+            version: 1,
+            scope: 'all',
+            exportDate: new Date().toISOString(),
+            db: db
+        };
+
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `sprint_predictor_backup_${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        
+        URL.revokeObjectURL(url);
+    }
+
+    /**
      * Importe des données depuis un texte JSON
      */
     static async importData(jsonText) {
@@ -58,21 +83,25 @@ export class ExportService {
     }
 
     static importGlobalBackup(data) {
-        const db = StorageManager.getDB();
         if (data.scope === 'all' && data.db) {
-            // Fusion des athlètes
-            db.athletes = { ...db.athletes, ...data.db.athletes };
+            const currentDB = StorageManager.getDB();
+            const incomingDB = data.db;
+
+            // Fusion intelligente des athlètes
+            const mergedAthletes = { ...currentDB.athletes, ...incomingDB.athletes };
             
-            // Fusion des courses
-            const racesToImport = data.db.races || {};
-            if (Array.isArray(racesToImport)) {
-                racesToImport.forEach(r => { if(r.id) db.races[r.id] = r; });
-            } else {
-                db.races = { ...db.races, ...racesToImport };
-            }
-            
-            StorageManager.saveDB(db);
-            return { type: 'global', count: Object.keys(data.db.athletes || {}).length };
+            // Fusion intelligente des courses
+            const mergedRaces = { ...currentDB.races, ...incomingDB.races };
+
+            const finalDB = {
+                ...incomingDB, // Garde la version et autres méta du fichier
+                athletes: mergedAthletes,
+                races: mergedRaces,
+                lastUpdated: new Date().toISOString()
+            };
+
+            StorageManager.saveDB(finalDB);
+            return { type: 'global', count: Object.keys(incomingDB.athletes || {}).length };
         }
         throw new Error("Contenu de sauvegarde invalide");
     }

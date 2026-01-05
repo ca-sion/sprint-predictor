@@ -2,6 +2,7 @@
  * StorageManager
  * Gère la persistance centrale des données dans LocalStorage.
  */
+import { SyncService } from '../services/SyncService.js';
 
 const STORAGE_KEY = 'sprint_predictor_db';
 const OLD_ATHLETES_KEY = 'sprint_predictor_athletes';
@@ -20,6 +21,9 @@ export class StorageManager {
         db.lastUpdated = new Date().toISOString();
         localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
         window.dispatchEvent(new CustomEvent('db-updated'));
+        
+        // Synchro Local-First
+        SyncService.saveToDisk(db);
     }
 
     static initializeDB() {

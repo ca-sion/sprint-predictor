@@ -1,5 +1,12 @@
 <template>
   <div class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
+    <!-- Sync Alert Banner (Sticky) -->
+    <div v-if="syncPermissionRequired" class="bg-orange-600 text-white px-4 py-2 text-center text-xs font-bold flex items-center justify-center space-x-3 cursor-pointer hover:bg-orange-700 transition-colors" @click="router.push('/')">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+      <span>Synchronisation en pause : Action requise pour autoriser l'accès au fichier.</span>
+      <span class="underline ml-2">Réactiver</span>
+    </div>
+
     <!-- Header -->
     <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -17,11 +24,16 @@
         </nav>
 
         <div class="flex items-center space-x-2 sm:space-x-3">
+          <!-- Sync Indicator -->
+          <div v-if="isSynced" class="hidden sm:flex items-center mr-2 px-2 py-1 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100" title="Synchronisation locale active">
+            <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2" :class="{'animate-pulse': isSyncing}"></div>
+            <span class="text-[10px] font-black uppercase tracking-tighter">Sync</span>
+          </div>
+
           <!-- Athlete Selector -->
           <div v-if="currentAthlete" class="relative group">
             <button @click="isAthleteSelectorOpen = !isAthleteSelectorOpen" 
                     class="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-xs font-bold border border-blue-100 hover:bg-blue-100 transition-all shadow-sm">
-              <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
               <span class="hidden sm:inline">{{ currentAthlete.name }}</span>
               <span class="sm:hidden uppercase">{{ currentAthleteInitials }}</span>
               <svg class="w-3 h-3 ml-1 transform transition-transform duration-200" :class="{'rotate-180': isAthleteSelectorOpen}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -147,13 +159,20 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { Athlete } from './models/Athlete.js';
 import { StorageManager } from './models/StorageManager.js';
+import { SyncService } from './services/SyncService.js';
 
+const router = useRouter();
 const currentAthlete = ref(null);
 const allAthletes = ref({});
 const isMobileMenuOpen = ref(false);
 const isAthleteSelectorOpen = ref(false);
+
+const isSynced = ref(false);
+const isSyncing = ref(false);
+const syncPermissionRequired = ref(false);
 
 const currentAthleteInitials = computed(() => {
   if (!currentAthlete.value?.name) return '??';
@@ -183,12 +202,45 @@ const closeSelector = (e) => {
   }
 };
 
+// Logic Sync
+const checkSyncStatus = async () => {
+  if (!SyncService.isSupported()) return;
+  
+  const handle = await SyncService.getHandle();
+  isSynced.value = !!handle;
+  if (handle) {
+    const hasPermission = await SyncService.verifyPermission(handle);
+    syncPermissionRequired.value = !hasPermission;
+    
+    // Si on a la permission, on tente de charger au démarrage
+    if (hasPermission) {
+        const diskDB = await SyncService.loadFromDisk();
+        if (diskDB) {
+            // Comparaison basique pour éviter d'écraser si identique
+            const localDB = StorageManager.getDB();
+            if (diskDB.lastUpdated > localDB.lastUpdated) {
+                console.log("Mise à jour depuis le disque...");
+                StorageManager.saveDB(diskDB);
+            }
+        }
+    }
+  }
+};
+
 onMounted(() => {
   updateCurrentAthlete();
+  checkSyncStatus();
+
   window.addEventListener('storage', updateCurrentAthlete);
   window.addEventListener('athlete-updated', updateCurrentAthlete);
   window.addEventListener('db-updated', updateCurrentAthlete);
   window.addEventListener('click', closeSelector);
+
+  // Events Sync
+  window.addEventListener('sync-status-changed', checkSyncStatus);
+  window.addEventListener('sync-permission-required', () => { syncPermissionRequired.value = true; });
+  window.addEventListener('sync-started', () => { isSyncing.value = true; });
+  window.addEventListener('sync-finished', () => { isSyncing.value = false; syncPermissionRequired.value = false; });
 });
 
 onUnmounted(() => {
@@ -196,6 +248,7 @@ onUnmounted(() => {
   window.removeEventListener('athlete-updated', updateCurrentAthlete);
   window.removeEventListener('db-updated', updateCurrentAthlete);
   window.removeEventListener('click', closeSelector);
+  window.removeEventListener('sync-status-changed', checkSyncStatus);
 });
 </script>
 

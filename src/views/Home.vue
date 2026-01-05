@@ -1,5 +1,36 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Shared Data Import Overlay -->
+    <div v-if="sharedImportData" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+      <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden max-w-lg w-full">
+        <div class="bg-blue-600 p-6 text-white">
+          <h3 class="text-xl font-bold">Données partagées reçues</h3>
+          <p class="text-blue-100 text-sm">Voulez-vous importer ces informations ?</p>
+        </div>
+        <div class="p-8 space-y-6">
+          <div v-if="sharedImportData.athlete" class="flex items-center space-x-4 p-4 bg-slate-50 rounded-xl">
+            <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-xl">
+              {{ sharedImportData.athlete.name.charAt(0) }}
+            </div>
+            <div>
+              <div class="font-bold text-slate-900 text-lg">{{ sharedImportData.athlete.name }}</div>
+              <div class="text-sm text-slate-500">
+                {{ sharedImportData.athlete.gender === 'M' ? 'Homme' : 'Femme' }} • Né(e) en {{ sharedImportData.athlete.birthYear }}
+              </div>
+            </div>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-3 pt-4">
+            <button @click="confirmSharedImport" class="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-200 transition-all">
+              Confirmer
+            </button>
+            <button @click="sharedImportData = null" class="px-6 py-3 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-colors">
+              Annuler
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="text-center mb-12">
       <h2 class="text-3xl font-extrabold text-slate-900 sm:text-4xl">
         Sprint <span class="text-blue-600">Predictor</span>
@@ -67,23 +98,27 @@
         </div>
       </div>
 
-      <!-- Tools & Import/Export -->
+      <!-- Tools & Sync -->
       <div class="space-y-6">
+        <!-- Sync Manager (Local-First) -->
+        <SyncManager />
+
+        <!-- Manual Backup/Restore -->
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-          <h3 class="text-sm font-bold text-slate-900 uppercase tracking-widest mb-4">Sauvegarde & Transfert</h3>
+          <h3 class="text-sm font-bold text-slate-900 uppercase tracking-widest mb-4">Sauvegarde JSON</h3>
           <div class="space-y-4">
             <button @click="exportData" class="w-full flex items-center justify-center px-4 py-3 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors">
               <svg class="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
               </svg>
-              Exporter en JSON
+              Exporter tout
             </button>
             
             <label class="w-full flex items-center justify-center px-4 py-3 border border-slate-200 border-dashed rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-50 transition-colors cursor-pointer">
               <svg class="w-5 h-5 mr-2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4v12"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
               </svg>
-              Importer un fichier
+              Restaurer / Fusionner
               <input type="file" class="hidden" @change="importData" accept=".json">
             </label>
           </div>
@@ -115,6 +150,7 @@ import { Athlete } from '../models/Athlete.js';
 import { Race } from '../models/Race.js';
 import { StorageManager } from '../models/StorageManager.js';
 import { ExportService } from '../services/ExportService.js';
+import SyncManager from '../components/SyncManager.vue';
 
 const router = useRouter();
 const athletes = ref({});
@@ -125,7 +161,7 @@ const loadAthletes = () => {
 
 const getAthleteSub = (athlete) => {
   const currentYear = new Date().getFullYear();
-  const age = currentYear - athlete.birthYear;
+  const age = currentYear - (athlete.birthYear || currentYear);
   const gender = athlete.gender === 'M' ? 'Homme' : 'Femme';
   return `${gender} • ${age} ans • ${athlete.lastUpdated?.split('T')[0] || '?'}`;
 };
@@ -164,23 +200,7 @@ const deleteAthlete = (id) => {
 };
 
 const exportData = () => {
-  // Export complet de toute la base de données (backup global)
-  const db = StorageManager.getDB();
-  const exportBundle = {
-    type: 'sprint_predictor_export',
-    version: db.version || 1,
-    scope: 'all',
-    exportDate: new Date().toISOString(),
-    db: db
-  };
-
-  const blob = new Blob([JSON.stringify(exportBundle, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `sprint-predictor-full-backup-${new Date().toISOString().split('T')[0]}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
+  ExportService.exportGlobalBackup();
 };
 
 const importData = async (event) => {
@@ -196,7 +216,7 @@ const importData = async (event) => {
       if (result.type === 'athlete') {
         alert(`Importation réussie : Athlète importé avec ${result.count} courses.`);
       } else if (result.type === 'global') {
-        alert(`Restauration complète réussie : ${result.count} athlètes importés/mis à jour.`);
+        alert(`Fusion réussie : ${result.count} athlètes mis à jour.`);
       }
       
       loadAthletes();
@@ -215,12 +235,14 @@ const shareAthlete = (athlete) => {
     navigator.clipboard.writeText(result.url).then(() => {
       let msg = "Lien de partage de l'athlète copié !";
       if (result.isLimited) {
-        msg += "\n\nNote: Seules les 3 courses les plus récentes sont incluses dans le lien pour limiter la taille. Utilisez 'Exporter' pour tout envoyer.";
+        msg += "\n\nNote: Seules les 3 courses les plus récentes sont incluses dans le lien.";
       }
       alert(msg);
     });
   }
 };
 
-onMounted(loadAthletes);
+onMounted(() => {
+  loadAthletes();
+});
 </script>
