@@ -22,6 +22,7 @@ export const DISCIPLINES = {
     name: "50m",
     type: DISCIPLINE_TYPES.FLAT,
     distance: 50,
+    availability: { M: ["U18", "U20", "U23", "ELITE"], F: ["U18", "U20", "U23", "ELITE"] },
     params: {
       kFactor: { U16: 0.7, default: 0.37 },
     },
@@ -41,6 +42,7 @@ export const DISCIPLINES = {
     name: "60m",
     type: DISCIPLINE_TYPES.FLAT,
     distance: 60,
+    availability: { M: ["U18", "U20", "U23", "ELITE"], F: ["U18", "U20", "U23", "ELITE"] },
     params: {
       kFactor: { U16: 0.7, default: 0.37 },
     },
@@ -60,6 +62,7 @@ export const DISCIPLINES = {
     name: "80m",
     type: DISCIPLINE_TYPES.FLAT,
     distance: 80,
+    availability: { M: ["U16"], F: ["U16"] },
     params: {
       kFactor: { U16: 0.7, default: 0.37 },
     },
@@ -79,6 +82,7 @@ export const DISCIPLINES = {
     name: "100m",
     type: DISCIPLINE_TYPES.FLAT,
     distance: 100,
+    availability: { M: ["U16", "U18", "U20", "U23", "ELITE"], F: ["U16", "U18", "U20", "U23", "ELITE"] },
     params: {
       baseStartCost: 0.92,
       kFactor: { U16: 0.7, U18: 0.37, U20: 0.37, F: 0.37, default: 0.2 },
@@ -106,6 +110,7 @@ export const DISCIPLINES = {
     name: "200m",
     type: DISCIPLINE_TYPES.FLAT_LONG,
     distance: 200,
+    availability: { M: ["U16", "U18", "U20", "U23", "ELITE"], F: ["U16", "U18", "U20", "U23", "ELITE"] },
     params: {
       fatigueIndexThresholds: { speed: 1.25, endurance: 1.15 },
       deltas: { speed: 0.2, endurance: -0.3, neutral: -0.1 },
@@ -129,6 +134,7 @@ export const DISCIPLINES = {
     name: "400m",
     type: DISCIPLINE_TYPES.LONG_SPRINT,
     distance: 400,
+    availability: { M: ["U18", "U20", "U23", "ELITE"], F: ["U18", "U20", "U23", "ELITE"] },
     params: {
       fatigueIndexThresholds: { sprinter: 1.2, resistant: 1.1 },
       margins: { U16_sprinter: 5.5, sprinter: 5.0, resistant: 2.8, default: 3.6 },
@@ -152,6 +158,7 @@ export const DISCIPLINES = {
     type: DISCIPLINE_TYPES.HURDLES,
     distance: 50,
     hurdleCount: 4,
+    availability: { M: ["U18", "U20", "ELITE"], F: ["U18", "U20", "ELITE"] },
     params: {
       ieTarget: { U18: 1.4, U20: 1.4, U16: 1.8, M: 1.0, F: 0.95 },
     }
@@ -162,6 +169,7 @@ export const DISCIPLINES = {
     type: DISCIPLINE_TYPES.HURDLES,
     distance: 60,
     hurdleCount: 5,
+    availability: { M: ["U18", "U20", "ELITE"], F: ["U18", "U20", "ELITE"] },
     params: {
       ieTarget: { U18: 1.4, U20: 1.4, U16: 1.8, M: 1.0, F: 0.95 },
     }
@@ -172,6 +180,7 @@ export const DISCIPLINES = {
     type: DISCIPLINE_TYPES.HURDLES,
     distance: 100,
     hurdleCount: 10,
+    availability: { F: ["U18", "U20", "U23", "ELITE"] },
     params: {
       ieTarget: { U18: 1.4, U20: 1.4, U16: 1.8, F: 0.95, default: 1.0 },
     }
@@ -182,6 +191,7 @@ export const DISCIPLINES = {
     type: DISCIPLINE_TYPES.HURDLES,
     distance: 110,
     hurdleCount: 10,
+    availability: { M: ["U18", "U20", "U23", "ELITE"] },
     params: {
       ieTarget: { U18: 1.4, U20: 1.4, U16: 1.8, M: 1.0, default: 1.0 },
     }
@@ -192,6 +202,7 @@ export const DISCIPLINES = {
     type: DISCIPLINE_TYPES.HURDLES_LONG,
     distance: 400,
     hurdleCount: 10,
+    availability: { M: ["U20", "U23", "ELITE"], F: ["U20", "U23", "ELITE"] },
     params: {
       diff400: { F: 4.5, M: 4.0, U18_bonus: 1.0 },
     }
@@ -283,4 +294,30 @@ export const getDynamicAnalysisTemplate = (disciplineId, gender = 'M', category 
     }
 
     return config.analysis || [];
+};
+
+/**
+ * Helper to get available disciplines based on gender and category
+ */
+export const getAvailableDisciplines = (gender, category) => {
+    return Object.values(DISCIPLINES).filter(d => {
+        if (!d.availability || !d.availability[gender]) return false;
+        return d.availability[gender].includes(category);
+    }).sort((a, b) => {
+        if (a.distance !== b.distance) return a.distance - b.distance;
+        return a.name.localeCompare(b.name);
+    });
+};
+
+/**
+ * Filters input groups to only show PB fields matching available disciplines
+ */
+export const getFilteredInputGroups = (allGroups, availableDisciplines) => {
+    const availableIds = new Set(availableDisciplines.map(d => 'pb_' + d.id.toLowerCase()));
+    return allGroups.map(group => ({
+        ...group,
+        fields: group.id === 'pbs' 
+            ? group.fields.filter(f => !f.id.startsWith('pb_') || availableIds.has(f.id))
+            : group.fields
+    }));
 };

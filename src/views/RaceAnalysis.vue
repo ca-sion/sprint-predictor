@@ -380,7 +380,7 @@
           <div>
             <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Discipline</label>
             <select v-model="newRaceForm.discipline" class="w-full bg-slate-50 border-slate-100 rounded-xl text-sm focus:ring-blue-500 focus:border-blue-500 p-3">
-              <option v-for="d in disciplines" :key="d" :value="d">{{ d }}</option>
+              <option v-for="d in availableDisciplines" :key="d.id" :value="d.id">{{ d.name }}</option>
             </select>
           </div>
           <div>
@@ -411,7 +411,7 @@ import { RaceService } from '../services/RaceService.js';
 import { ExportService } from '../services/ExportService.js';
 import { FormatService } from '../services/FormatService.js';
 import VideoAnalyzer from '../components/VideoAnalyzer.vue';
-import { getDynamicDisciplineConfig, getDynamicAnalysisTemplate } from '../data/definitions/Disciplines.js';
+import { getDynamicDisciplineConfig, getDynamicAnalysisTemplate, getAvailableDisciplines } from '../data/definitions/Disciplines.js';
 
 const route = useRoute();
 const athlete = ref(null);
@@ -420,7 +420,16 @@ const activeRace = ref(null);
 const showNewRaceModal = ref(false);
 const videoAnalyzerRef = ref(null);
 
-const disciplines = ['50m', '60m', '100m', '200m', '400m', '50mH', '60mH', '100mH', '110mH', '400mH'];
+const availableDisciplines = computed(() => {
+  if (!athlete.value) return [];
+  return getAvailableDisciplines(athlete.value.gender, athlete.value.category);
+});
+
+watch(availableDisciplines, (newVal) => {
+    if (newVal.length > 0 && !newVal.find(d => d.id === newRaceForm.value.discipline)) {
+        newRaceForm.value.discipline = newVal[0].id;
+    }
+});
 
 const newRaceForm = ref({
   discipline: '100m',

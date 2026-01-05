@@ -39,7 +39,7 @@
 
       <!-- Dynamic Metrics Groups -->
       <div class="space-y-4">
-        <section v-for="(group, gIdx) in inputGroups" :key="group.title" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md">
+        <section v-for="(group, gIdx) in filteredInputGroups" :key="group.title" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md">
           <div @click="toggleGroup(gIdx)" class="p-4 flex items-center justify-between cursor-pointer bg-white hover:bg-slate-50 transition-colors select-none">
             <h3 class="text-sm font-bold text-slate-800 flex items-center">
               <span class="mr-3 text-lg opacity-80">{{ group.icon }}</span> {{ group.title }}
@@ -96,17 +96,7 @@
           </div>
           <div class="relative">
             <select v-model="targetEvent" @change="runAnalysis" class="appearance-none bg-white border border-slate-300 hover:border-blue-400 rounded-lg pl-4 pr-10 py-2 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer shadow-sm">
-              <option value="50m">50m</option>
-              <option value="60m">60m</option>
-              <option value="50mH">50m Haies</option>
-              <option value="60mH">60m Haies</option>
-              <option value="80m">80m</option>
-              <option value="100m">100m</option>
-              <option value="200m">200m</option>
-              <option value="400m">400m</option>
-              <option value="100mH">100m Haies (F)</option>
-              <option value="110mH">110m Haies (H)</option>
-              <option value="400mH">400m Haies</option>
+              <option v-for="d in availableDisciplines" :key="d.id" :value="d.id">{{ d.name }}</option>
             </select>
             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
               <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -378,7 +368,7 @@ import { FormatService } from '../services/FormatService.js';
 import { INPUT_GROUPS } from '../data/definitions/FormConfig.js';
 import { ATHLETICS_DATA } from '../data/definitions/Standards.js';
 import { GLOSSARY, BIBLIOGRAPHY } from '../data/definitions/Glossary.js';
-import { getDynamicAnalysisTemplate } from '../data/definitions/Disciplines.js';
+import { DISCIPLINES, getDynamicAnalysisTemplate, getAvailableDisciplines, getFilteredInputGroups } from '../data/definitions/Disciplines.js';
 
 const athlete = ref(new Athlete());
 const engine = new PredictionEngine();
@@ -386,9 +376,20 @@ const calculating = ref(false);
 const targetEvent = ref('100m');
 const prediction = ref(null);
 const analysis = ref(null);
-const inputGroups = INPUT_GROUPS;
+const filteredInputGroups = computed(() => getFilteredInputGroups(INPUT_GROUPS, availableDisciplines.value));
 const openGroups = ref([false, false, false, false]);
 const bibliography = BIBLIOGRAPHY;
+
+const availableDisciplines = computed(() => {
+  return getAvailableDisciplines(athlete.value.gender, athlete.value.category);
+});
+
+watch(availableDisciplines, (newVal) => {
+    if (newVal.length > 0 && !newVal.find(d => d.id === targetEvent.value)) {
+        targetEvent.value = newVal[0].id;
+        runAnalysis();
+    }
+});
 
 const analysisSplits = computed(() => {
   if (!prediction.value) return [];

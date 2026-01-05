@@ -38,16 +38,16 @@
         </div>
 
         <!-- Discipline Selector -->
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 overflow-x-auto pb-2 lg:pb-0 custom-scrollbar">
           <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest hidden lg:block">Discipline</span>
-          <div class="flex bg-slate-100 p-1 rounded-xl">
+          <div class="flex bg-slate-100 p-1 rounded-xl whitespace-nowrap">
             <button 
               v-for="d in availableDisciplines"
-              :key="d"
-              @click="selectedDiscipline = d"
-              :class="['px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all', selectedDiscipline === d ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']"
+              :key="d.id"
+              @click="selectedDiscipline = d.id"
+              :class="['px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all', selectedDiscipline === d.id ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']"
             >
-              {{ d }}
+              {{ d.name }}
             </button>
           </div>
         </div>
@@ -404,7 +404,7 @@ import { StorageManager } from '../models/StorageManager.js';
 import { PredictionEngine } from '../models/PredictionEngine.js';
 import { RaceService } from '../services/RaceService.js';
 import { FormatService } from '../services/FormatService.js';
-import { getDynamicAnalysisTemplate } from '../data/definitions/Disciplines.js';
+import { getDynamicAnalysisTemplate, getAvailableDisciplines } from '../data/definitions/Disciplines.js';
 
 const athlete = ref(null);
 const races = ref([]);
@@ -651,8 +651,16 @@ const renderComparisonChart = () => {
 
 // --- DATA ACCESS HELPERS ---
 const availableDisciplines = computed(() => {
-  const s = new Set(races.value.map(r => r.discipline));
-  return Array.from(s).sort();
+  if (!athlete.value) return [];
+  const profileAvailable = getAvailableDisciplines(athlete.value.gender, athlete.value.category);
+  const raceIds = new Set(races.value.map(r => r.discipline));
+  return profileAvailable.filter(d => raceIds.has(d.id));
+});
+
+watch(availableDisciplines, (newVal) => {
+    if (newVal.length > 0 && !newVal.find(d => d.id === selectedDiscipline.value)) {
+        selectedDiscipline.value = newVal[0].id;
+    }
 });
 
 const filteredRaces = computed(() => {
@@ -767,9 +775,12 @@ watch([selectedDiscipline, activeMetric, athlete, comparisonRaceId], runAnalysis
 const loadInitialData = () => {
   const athleteId = StorageManager.getCurrentAthleteId();
   if (athleteId) {
-    athlete.value = Athlete.load(athleteId);
-    races.value = Race.getByAthlete(athleteId);
-    runAnalysis();
+    const loaded = Athlete.load(athleteId);
+    if (loaded) {
+      athlete.value = loaded;
+      races.value = Race.getByAthlete(athleteId);
+      runAnalysis();
+    }
   }
 };
 
