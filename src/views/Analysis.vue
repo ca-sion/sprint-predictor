@@ -2,7 +2,7 @@
   <div class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
     
     <!-- Left Column: Inputs -->
-    <aside class="lg:col-span-4 space-y-6 lg:sticky lg:top-24 max-h-[calc(100vh-8rem)] overflow-y-auto custom-scrollbar pr-1 pb-10">
+    <aside class="lg:col-span-4 space-y-6 lg:sticky lg:top-24 max-h-[calc(100vh-8rem)] overflow-y-auto custom-scrollbar pr-1 pb-10 no-print">
       
       <!-- Basic Info -->
       <section class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
@@ -88,21 +88,39 @@
     <!-- Right Column: Results -->
     <article class="lg:col-span-8 space-y-6" id="analysis-content">
       
+      <!-- Print Header (Only visible when printing) -->
+      <div class="print-header">
+        <h1>Rapport d'Analyse</h1>
+        <div class="report-meta">
+          <p>Athlète : {{ athlete.name }}</p>
+          <p>{{ athlete.category }} • {{ targetEvent }}</p>
+          <p>Généré le {{ new Date().toLocaleDateString('fr-CH') }}</p>
+        </div>
+      </div>
+
       <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div class="p-6 border-b border-slate-100 bg-slate-50/50 flex flex-wrap items-center justify-between gap-4">
+        <div class="p-6 border-b border-slate-100 bg-slate-50/50 flex flex-wrap items-center justify-between gap-4 no-print">
           <div>
             <h2 class="text-lg font-bold text-slate-900">Prédiction</h2>
             <p class="text-xs text-slate-500">Sélectionnez la discipline cible</p>
           </div>
-          <div class="relative">
-            <select v-model="targetEvent" @change="runAnalysis" class="appearance-none bg-white border border-slate-300 hover:border-blue-400 rounded-lg pl-4 pr-10 py-2 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer shadow-sm">
-              <option v-for="d in availableDisciplines" :key="d.id" :value="d.id">{{ d.name }}</option>
-            </select>
-            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-              </svg>
+          <div class="flex items-center gap-3">
+            <div class="relative no-print">
+              <select v-model="targetEvent" @change="runAnalysis" class="appearance-none bg-white border border-slate-300 hover:border-blue-400 rounded-lg pl-4 pr-10 py-2 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer shadow-sm">
+                <option v-for="d in availableDisciplines" :key="d.id" :value="d.id">{{ d.name }}</option>
+              </select>
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </div>
             </div>
+            
+            <button v-if="prediction" @click="printReport" class="no-print p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-all" title="Imprimer le rapport">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+              </svg>
+            </button>
           </div>
         </div>
 
@@ -352,6 +370,11 @@
               </li>
           </ul>
       </section>
+
+      <!-- Print Footer -->
+      <div class="report-footer">
+        Sprint Predictor — Performance Report — {{ athlete.name }} — {{ new Date().toLocaleDateString('fr-CH') }}
+      </div>
     </article>
   </div>
 </template>
@@ -795,6 +818,10 @@ const getDiffData = (row) => {
   if (row.unit === 'power') formattedDiff = (diff > 0 ? '+' : '') + diff.toFixed(1) + ' W/kg';
 
   return { val: formattedDiff, isGood: isPositive };
+};
+
+const printReport = () => {
+  window.print();
 };
 
 onMounted(() => {

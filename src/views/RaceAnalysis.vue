@@ -1,7 +1,7 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Header -->
-    <div class="mb-8">
+    <div class="mb-8 no-print">
       <nav class="flex mb-4" aria-label="Breadcrumb">
         <ol class="flex items-center space-x-2">
           <li>
@@ -49,7 +49,7 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <!-- Race List -->
-      <div class="lg:col-span-1 space-y-4">
+      <div class="lg:col-span-1 space-y-4 no-print">
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
           <div class="p-4 border-b border-slate-100 bg-slate-50/50">
             <h3 class="text-sm font-bold text-slate-900 uppercase tracking-widest">Historique des courses</h3>
@@ -82,6 +82,17 @@
       <!-- Analysis Detail -->
       <div class="lg:col-span-2">
         <div v-if="activeRace" class="space-y-6">
+          
+          <!-- Print Header (Only visible when printing) -->
+          <div class="print-header">
+            <h1>Analyse de Course</h1>
+            <div class="report-meta">
+              <p>Athlète : {{ athlete?.name }}</p>
+              <p>{{ activeRace.name || activeRace.discipline }}</p>
+              <p>{{ formatDate(activeRace.date) }}</p>
+            </div>
+          </div>
+
           <!-- Race Info Card -->
           <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
             <div class="flex justify-between items-start mb-6">
@@ -98,7 +109,12 @@
                   <input type="date" v-model="activeRace.date" @change="saveActiveRace" class="bg-transparent border-none p-0 text-sm focus:ring-0 text-slate-500 cursor-pointer">
                 </div>
               </div>
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-2 no-print">
+                <button @click="printReport" class="p-2 text-slate-400 hover:text-blue-600 transition-colors" title="Imprimer le rapport">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                  </svg>
+                </button>
                 <button @click="shareRace(activeRace)" class="p-2 text-slate-400 hover:text-blue-600 transition-colors" title="Partager cette course">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
@@ -115,6 +131,7 @@
             <!-- Capture Tool Block -->
             <VideoAnalyzer 
               ref="videoAnalyzerRef"
+              class="no-print"
               :next-milestone="nextMilestone"
               :has-milestones="activeRace.milestones.length > 0"
               @capture="onCapture"
@@ -255,7 +272,7 @@
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <!-- Hurdle Steps Input -->
-                  <div class="bg-slate-900 rounded-2xl p-6 text-white shadow-xl">
+                  <div class="bg-slate-900 rounded-2xl p-6 text-white shadow-xl no-print">
                     <h5 class="text-[10px] font-bold text-blue-400 uppercase mb-4 tracking-widest">Nombre de pas entre les haies</h5>
                     <div class="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                       <div v-for="seg in hurdleAnalysis" :key="'hurdle-step-' + seg.label" class="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-colors">
@@ -306,7 +323,7 @@
                 </h4>
                 
                 <!-- Steps Input Section -->
-                <div class="bg-slate-50 border border-slate-100 rounded-2xl p-5 mb-6">
+                <div class="bg-slate-50 border border-slate-100 rounded-2xl p-5 mb-6 no-print">
                   <h5 class="text-[10px] font-bold text-slate-400 uppercase mb-4 tracking-widest">Saisie du nombre de pas</h5>
                   <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                     <div v-for="seg in segmentSpeeds" :key="'input-' + seg.id" class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
@@ -357,6 +374,11 @@
                 placeholder="Ex: Bonnes sensations, vent de face en ligne droite, fatigue en fin de course..."
               ></textarea>
             </div>
+          </div>
+          
+          <!-- Print Footer -->
+          <div class="report-footer">
+            Sprint Predictor — Analyse de Course — {{ athlete?.name }} — {{ activeRace.name || activeRace.discipline }}
           </div>
         </div>
         
@@ -581,6 +603,10 @@ const syncMilestoneWithCurrent = (index) => {
     activeRace.value.milestones[index].time = parseFloat(time.toFixed(3));
     saveActiveRace();
   }
+};
+
+const printReport = () => {
+  window.print();
 };
 
 const formatDate = (dateStr) => {
