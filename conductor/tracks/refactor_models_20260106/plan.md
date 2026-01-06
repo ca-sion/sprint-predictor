@@ -3,7 +3,7 @@
 Ce plan suit le workflow défini dans `conductor/workflow.md`.
 
 ## Phase 1 : Mise en place de l'environnement de test
-- [ ] Task: Installer Vitest et configurer l'environnement de test
+- [x] Task: Installer Vitest et configurer l'environnement de test
 - [ ] Task: Conductor - User Manual Verification 'Phase 1 : Mise en place de l'environnement de test' (Protocol in workflow.md)
 
 ## Phase 2 : Tests et Refactoring du modèle Athlete
