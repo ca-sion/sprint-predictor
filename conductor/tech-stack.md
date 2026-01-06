@@ -15,3 +15,7 @@
 ## Infrastructure et Déploiement
 - **Hosting :** GitHub Pages (configuré via `gh-pages`)
 - **HTTPS :** Configuré localement avec `vite-plugin-mkcert`
+
+## Tests
+- **Framework :** Vitest
+- **Couverture :** @vitest/coverage-v8
