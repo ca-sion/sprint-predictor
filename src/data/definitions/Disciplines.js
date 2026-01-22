@@ -28,13 +28,13 @@ export const DISCIPLINES = {
     },
     capture: [
       { label: "Départ (0m)", type: "split", distance: 0 },
-      { label: "20m", type: "split", distance: 20 },
       { label: "30m", type: "split", distance: 30 },
       { label: "Arrivée (50m)", type: "split", distance: 50 },
     ],
     analysis: [
-      { label: "Départ (0-20)", start: 0, end: 20, type: "accel" },
-      { label: "Vitesse (20-50)", start: 20, end: 50, type: "total" },
+      { label: "Départ (0-30)", start: 0, end: 30, type: "accel" },
+      { label: "Vitesse (30-50)", start: 30, end: 50, type: "total" },
+      { label: "50m", start: 0, end: 50, type: "total" },
     ],
   },
   "60m": {
@@ -117,7 +117,6 @@ export const DISCIPLINES = {
     },
     capture: [
       { label: "Départ (0m)", type: "split", distance: 0 },
-      { label: "30m", type: "split", distance: 30 },
       { label: "100m", type: "split", distance: 100 },
       { label: "150m", type: "split", distance: 150 },
       { label: "Arrivée (200m)", type: "split", distance: 200 },
