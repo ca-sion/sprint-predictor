@@ -28,7 +28,7 @@
         <video 
           ref="videoRef" 
           :src="videoUrl" 
-          class="w-full h-full"
+          class="w-full h-full cursor-pointer"
           @timeupdate="onVideoTimeUpdate"
           @loadedmetadata="onVideoLoaded"
           @click="togglePlay"
@@ -39,12 +39,7 @@
           T: {{ formatTime(videoCurrentTime) }}
         </div>
 
-        <!-- Play Overlay -->
-        <div v-if="videoPaused" @click="togglePlay" class="absolute inset-0 flex items-center justify-center bg-black/20 cursor-pointer hover:bg-black/40 transition-all">
-          <div class="w-16 h-16 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 scale-90 hover:scale-100 transition-transform">
-            <svg class="w-8 h-8 text-white translate-x-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          </div>
-        </div>
+
 
         <!-- Integrated Seeker -->
         <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 via-black/40 to-transparent pt-12">
