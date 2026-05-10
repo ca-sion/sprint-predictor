@@ -78,6 +78,14 @@ export const GLOSSARY = {
     'Moyenne (Potentiel vs Réalisé)': {
         term: 'Pondération Réaliste',
         def: 'Algorithme qui équilibre votre potentiel physique théorique (ce que vos muscles peuvent faire) avec vos records actuels (ce que vous avez déjà prouvé). Cela évite les prédictions trop optimistes ou déconnectées de la réalité du terrain.'
+    },
+    'Delta': {
+        term: 'Différentiel de Vitesse (Delta)',
+        def: 'Écart temporel appliqué au temps de base du 100m pour estimer la performance sur 200m. Un delta neutre ou négatif indique une excellente endurance de vitesse, tandis qu\'un delta positif souligne une baisse de vélocité.'
+    },
+    'Neutre': {
+        term: 'Profil Neutre',
+        def: 'Désigne un athlète présentant un rapport équilibré entre sa vitesse maximale et sa capacité à la maintenir. Son profil de fatigue correspond aux standards habituels de la discipline.'
     }
 };
 
