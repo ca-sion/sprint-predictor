@@ -235,7 +235,7 @@ const shareAthlete = (athlete) => {
     navigator.clipboard.writeText(result.url).then(() => {
       let msg = "Lien de partage de l'athlète copié !";
       if (result.isLimited) {
-        msg += "\n\nNote: Seules les 3 courses les plus récentes sont incluses dans le lien.";
+        msg += `\n\nNote: Seules les ${result.includedCount} courses les plus récentes ont été incluses pour ne pas surcharger le lien. Utilisez 'Exporter' pour envoyer l'historique complet.`;
       }
       alert(msg);
     });

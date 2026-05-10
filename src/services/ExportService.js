@@ -166,25 +166,40 @@ export class ExportService {
 
         const races = Race.getByAthlete(athleteId);
         
-        // On limite aux 3 dernières courses pour éviter d'exploser l'URL
-        const limitedRaces = races.slice(0, 3);
+        // On ajoute dynamiquement les courses tant qu'on ne dépasse pas une limite de taille (~2500 caractères)
+        let limitedRaces = [];
+        let encoded = "";
+        const MAX_ENCODED_LENGTH = 2500;
 
         const compact = {
             t: 'spa', // type: sprint-predictor-athlete
             v: 1,
             a: { id: athlete.id, n: athlete.name, g: athlete.gender, b: athlete.birthYear, no: athlete.notes, m: athlete.metrics },
-            rs: limitedRaces.map(r => ({
-                id: r.id,
-                d: r.discipline,
-                da: r.date,
-                n: r.name,
-                m: r.milestones.map(m => [m.distance, m.time, m.type === 'split' ? 0 : 1]),
-                s: r.stepCounts
-            }))
+            rs: []
         };
 
-        const json = JSON.stringify(compact);
-        const encoded = btoa(unescape(encodeURIComponent(json)));
+        encoded = btoa(unescape(encodeURIComponent(JSON.stringify(compact))));
+
+        for (const r of races) {
+            const testRaces = [...limitedRaces, r];
+            compact.rs = testRaces.map(race => ({
+                id: race.id,
+                d: race.discipline,
+                da: race.date,
+                n: race.name,
+                m: race.milestones.map(m => [m.distance, m.time, m.type === 'split' ? 0 : 1]),
+                s: race.stepCounts
+            }));
+            
+            const json = JSON.stringify(compact);
+            const testEncoded = btoa(unescape(encodeURIComponent(json)));
+            
+            if (testEncoded.length > MAX_ENCODED_LENGTH && limitedRaces.length > 0) {
+                break; // On arrête si on dépasse la limite, en gardant au moins 1 course
+            }
+            limitedRaces = testRaces;
+            encoded = testEncoded;
+        }
         
         const url = new URL(window.location.origin + window.location.pathname);
         url.hash = `#/import?data=${encoded}`;
@@ -192,7 +207,8 @@ export class ExportService {
         return {
             url: url.toString(),
             count: races.length,
-            isLimited: races.length > 3
+            includedCount: limitedRaces.length,
+            isLimited: races.length > limitedRaces.length
         };
     }
 
