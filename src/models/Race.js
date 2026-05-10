@@ -232,13 +232,17 @@ export class Race {
    * @returns {number|null} Temps interpolé ou null.
    */
   getTimeAtDistance(distance) {
-    if (distance === 0) return 0;
+    if (distance === 0) {
+      const exactStart = this.milestones.find((m) => Math.abs(m.distance) < 0.01);
+      return exactStart ? exactStart.time : 0;
+    }
 
     const exact = this.milestones.find((m) => Math.abs(m.distance - distance) < 0.01);
     if (exact) return exact.time;
 
     const after = this.milestones.find((m) => m.distance > distance);
-    const before = [...this.milestones].reverse().find((m) => m.distance <= distance) || { distance: 0, time: 0 };
+    const startFallback = this.milestones.find((m) => Math.abs(m.distance) < 0.01) || { distance: 0, time: 0 };
+    const before = [...this.milestones].reverse().find((m) => m.distance <= distance) || startFallback;
 
     if (!after) return null;
 

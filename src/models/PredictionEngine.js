@@ -214,10 +214,20 @@ export class PredictionEngine {
         else if (athlete.gender === 'F') ie = ieMap.F || ie;
         else if (athlete.gender === 'M') ie = ieMap.M || ie;
         
+        const totalTime = tFlat + ie;
+        const scale = totalTime / tFlat;
+        const adjustedSplits = pFlat.splits.map(s => ({
+            ...s,
+            time: s.time * scale,
+            segmentTime: s.segmentTime * scale,
+            velocity: s.velocity / scale,
+            frequency: s.frequency ? s.frequency / scale : undefined
+        }));
+
         return { 
-            time: tFlat + ie, 
+            time: totalTime, 
             range: 0.3, 
-            splits: pFlat.splits, 
+            splits: adjustedSplits, 
             tags: ['Technique Index', `IE Target: +${ie}s`]
         };
     }
@@ -231,10 +241,20 @@ export class PredictionEngine {
         const diffMap = config.params.diff400;
         let diff = (athlete.gender === 'F' ? diffMap.F : diffMap.M) + (athlete.category === 'U18' ? diffMap.U18_bonus : 0);
         
+        const totalTime = t400 + diff;
+        const scale = totalTime / t400;
+        const adjustedSplits = p400.splits.map(s => ({
+            ...s,
+            time: s.time * scale,
+            segmentTime: s.segmentTime * scale,
+            velocity: s.velocity / scale,
+            frequency: s.frequency ? s.frequency / scale : undefined
+        }));
+
         return { 
-            time: t400 + diff, 
+            time: totalTime, 
             range: 1.0, 
-            splits: p400.splits, 
+            splits: adjustedSplits, 
             tags: ["400mH Differential", `T400 + ${diff}s`] 
         };
     }
