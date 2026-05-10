@@ -116,6 +116,13 @@
               </div>
             </div>
             
+            <router-link v-if="prediction && athlete.history && athlete.history.length > 0" to="/metrics-evolution" class="no-print p-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-all flex items-center gap-1 text-xs font-bold" title="Voir l'évolution historique">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/>
+              </svg>
+              <span>Évolution</span>
+            </router-link>
+            
             <button v-if="prediction" @click="printReport" class="no-print p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-all" title="Imprimer le rapport">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
